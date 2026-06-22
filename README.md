@@ -1,4 +1,4 @@
-# Clawd Keyboard
+# Claude Keyboard - Clawd
 
 ![Clawd keyboard preview](models/view.jpeg)
 
@@ -15,7 +15,7 @@ keys like `F13`/`F14`, media controls, or your own app shortcuts.
 - Default keys are `F13` and `F14`, so they are easy to bind in other tools.
 - Runtime BLE configuration for key mappings, device name, and the external LED.
 - Confirmed BLE pairing, battery reporting, LiPo charging, and deep sleep.
-- Cross-platform desktop control app (Tauri + native Rust BLE).
+- Browser control panel (Web Bluetooth) for LED, buttons, and name.
 - Printable mascot-style enclosure and FreeCAD sources in `models/`.
 
 ## Repository
@@ -23,7 +23,7 @@ keys like `F13`/`F14`, media controls, or your own app shortcuts.
 | Path | Contents |
 | --- | --- |
 | `program/xiao_ble_keyboard/` | Arduino firmware and detailed build/flash notes. |
-| `desktop/` | Tauri + Rust desktop app for LED, keymap, and device name changes. |
+| `app/` | Web Bluetooth control panel for LED, keymap, and device name changes. |
 | `models/` | FreeCAD sources, printable 3MF files, drawing export, and preview image. |
 
 ## Models
@@ -46,18 +46,18 @@ Start with the firmware README:
 It covers wiring, pairing, custom key mappings, battery behaviour, Arduino IDE
 setup, and upload troubleshooting.
 
-## Desktop App
+## Control App
 
-The `desktop/` folder contains a cross-platform control app built with
-**Tauri v2 + Rust**. Bluetooth is handled natively in Rust (`btleplug`) — no Web
-Bluetooth. After pairing with **clawd**, it can:
+The `app/` folder is a small **Web Bluetooth** control panel that runs in the
+browser — no install. After pairing with **clawd**, it can:
 
 - set the external LED brightness;
 - remap Button 1 and Button 2;
 - change the BLE/USB device name;
 - reset the keymap or name to firmware defaults.
 
-Runs on Windows, macOS, and Linux. See [`desktop/README.md`](desktop/README.md).
+Use Chrome or Edge (desktop or Android), served over `https://` or
+`http://localhost`. See [`app/README.md`](app/README.md).
 
 ## Git LFS
 
