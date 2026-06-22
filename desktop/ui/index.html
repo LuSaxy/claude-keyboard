@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clawd Control</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Native BLE control</p>
+        <h1>Clawd Control</h1>
+        <p class="lede">Scan, connect, and configure Clawd over Bluetooth — LED, buttons, and name.</p>
+        <div class="row">
+          <button id="scan" class="primary">Scan</button>
+          <button id="disconnect" class="ghost" disabled>Disconnect</button>
+        </div>
+        <select id="devices" size="4" aria-label="Discovered devices"></select>
+        <div class="row">
+          <button id="connect" disabled>Connect to selected</button>
+        </div>
+        <p id="status" class="status">Disconnected</p>
+      </section>
+
+      <section class="card" data-requires-connection>
+        <div class="section-title">
+          <h2>Device Name</h2>
+          <span>max 15 bytes</span>
+        </div>
+        <label for="device-name">BLE / USB name</label>
+        <div class="row">
+          <input id="device-name" maxlength="15" autocomplete="off" placeholder="clawd" />
+          <button id="save-name">Save</button>
+        </div>
+        <button id="reset-name" class="ghost">Reset to clawd</button>
+        <p class="hint">BLE advertising updates after reconnect; USB name updates after a reboot.</p>
+      </section>
+
+      <section class="card" data-requires-connection>
+        <div class="section-title">
+          <h2>User LED</h2>
+          <span id="led-value">0</span>
+        </div>
+        <input id="led-slider" type="range" min="0" max="255" value="0" />
+        <div class="quick-grid">
+          <button data-led="0">Off</button>
+          <button data-led="64">Low</button>
+          <button data-led="128">Half</button>
+          <button data-led="255">Full</button>
+        </div>
+      </section>
+
+      <section class="card" data-requires-connection>
+        <div class="section-title">
+          <h2>Buttons</h2>
+          <span>saved on device</span>
+        </div>
+
+        <article class="button-card">
+          <h3>Button 1</h3>
+          <label for="b1-type">Type</label>
+          <select id="b1-type"></select>
+          <label for="b1-code">Key</label>
+          <select id="b1-code"></select>
+          <div class="mods" id="b1-mods">
+            <label><input id="b1-ctrl" type="checkbox" /> Ctrl</label>
+            <label><input id="b1-shift" type="checkbox" /> Shift</label>
+            <label><input id="b1-alt" type="checkbox" /> Alt</label>
+            <label><input id="b1-gui" type="checkbox" /> Win/Cmd</label>
+          </div>
+        </article>
+
+        <article class="button-card">
+          <h3>Button 2</h3>
+          <label for="b2-type">Type</label>
+          <select id="b2-type"></select>
+          <label for="b2-code">Key</label>
+          <select id="b2-code"></select>
+          <div class="mods" id="b2-mods">
+            <label><input id="b2-ctrl" type="checkbox" /> Ctrl</label>
+            <label><input id="b2-shift" type="checkbox" /> Shift</label>
+            <label><input id="b2-alt" type="checkbox" /> Alt</label>
+            <label><input id="b2-gui" type="checkbox" /> Win/Cmd</label>
+          </div>
+        </article>
+
+        <div class="row actions">
+          <button id="save-keys" class="primary">Save Buttons</button>
+          <button id="reset-keys" class="ghost">Reset F13 / F14</button>
+        </div>
+        <p class="hint">Media keys work over BLE only; the USB-HID interface is keyboard-only.</p>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
