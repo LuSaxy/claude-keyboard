@@ -175,11 +175,21 @@ function applyState(state) {
 async function readRetry(characteristic) {
   const deadline = Date.now() + 30000;
   let lastError;
+  let promptedForPairing = false;
   for (;;) {
     try {
       return await characteristic.readValue();
     } catch (error) {
       lastError = error;
+    }
+    // We only get here when a read failed, which means the link is not yet
+    // bonded and pairing is required. Already-paired devices never see this.
+    if (!promptedForPairing) {
+      setStatus(
+        "Waiting for pairing...\n\nIf the device LED is MAGENTA, press Button 1 " +
+          "on the device to confirm pairing. This can take up to ~30s.",
+      );
+      promptedForPairing = true;
     }
     if (Date.now() >= deadline) {
       throw new Error(
@@ -233,10 +243,7 @@ async function connect() {
     setStatus("Device disconnected.");
   });
 
-  setStatus(
-    "Connecting...\n\nIf the device LED turns MAGENTA, press Button 1 on the " +
-      "device to confirm pairing. The first connect can take up to ~30s.",
-  );
+  setStatus("Connecting...");
   const server = await device.gatt.connect();
   const ledService = await server.getPrimaryService(UUID.ledService);
   const configService = await server.getPrimaryService(UUID.configService);
