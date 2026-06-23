@@ -13,3 +13,6 @@ docs/readme.md
 # Python
 __pycache__/
 *.pyc
+
+# Claude Code AI metrics hook
+.ai_changes.json
