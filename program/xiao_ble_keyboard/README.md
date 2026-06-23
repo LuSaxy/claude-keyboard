@@ -251,7 +251,7 @@ keymap characteristic):
 Use **↓ (read)** to check the stored value. A written mapping is auto-saved to the
 board's flash, so it survives reboot and deep sleep.
 
-## Toolchain setup (Arduino IDE)
+## Toolchain setup (Arduino IDE) Or use commandline (see below)
 
 1. Install the **Arduino IDE** (2.x recommended).
 2. **File > Preferences > Additional Boards Manager URLs**, add:
@@ -285,6 +285,14 @@ board's flash, so it survives reboot and deep sleep.
 Open `xiao_ble_keyboard.ino`, choose your board + port, click **Upload**.
 
 ### arduino-cli (one-time setup)
+
+Need to have arduino-cli and python
+
+```sh
+brew update
+brew install arduino-cli
+```
+
 ```sh
 arduino-cli config add board_manager.additional_urls \
   https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json
@@ -301,6 +309,14 @@ arduino-cli board list
 arduino-cli compile --upload -p /dev/ttyACM0 \
   -b Seeeduino:nrf52:xiaonRF52840Sense .
 ```
+
+```sh
+# upload a prebuilt .zip (from Arduino IDE or arduino-cli compile) to the board:
+# change folder with result of compile, and the port to match your system.
+arduino-cli upload -i /Users/rytsh/Library/Caches/arduino/sketches/6C512CF09F895044ED0AA7456872BEE2/xiao_ble_keyboard.ino.zip -p /dev/cu.usbmodem101 \
+  -b Seeeduino:nrf52:xiaonRF52840Sense .
+```
+
 This resets the board into its UF2 bootloader automatically (1200-baud "touch")
 and flashes it with `adafruit-nrfutil`.
 
@@ -327,6 +343,7 @@ adafruit-nrfutil dfu serial \
   -pkg /tmp/xiao_build/xiao_ble_keyboard.ino.zip \
   -p /dev/ttyACM0 -b 115200 --singlebank
 ```
+
 On success it prints `Device programmed.` and the board resets into your sketch
 (its USB id flips back from `2886:0045` (bootloader) to `2886:8045` (app)).
 

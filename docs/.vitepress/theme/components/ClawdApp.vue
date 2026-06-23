@@ -105,6 +105,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Non-reactive connection handles.
 let device = null;
 let chars = {};
+// Devices this site already has permission for (Web Bluetooth getDevices()).
+let knownMap = new Map();
 
 // Reactive UI state.
 const connected = ref(false);
@@ -114,6 +116,7 @@ const logText = ref("Ready. Press CONNECT.");
 const logKind = ref("");
 const name = ref("");
 const led = ref(0);
+const knownDevices = ref([]); // [{ id, name, active }] from getDevices()
 
 const b1 = reactive(makeButton(0x68));
 const b2 = reactive(makeButton(0x69));
@@ -314,27 +317,40 @@ async function loadState() {
 
 // ----- actions -----
 
-async function connect() {
-  if (!navigator.bluetooth) {
-    setStatus(
-      "Web Bluetooth is not available. Use Chrome or Edge, served over https:// " +
-        "or http://localhost (not file://).",
-      "error",
-    );
+function onDisconnected() {
+  connected.value = false;
+  setStatus("Device disconnected.");
+  refreshKnownDevices();
+}
+
+// Pull the devices this site has already been granted access to, so the user can
+// reconnect to a known Clawd without opening the browser chooser again.
+// getDevices() is Chrome/Edge only and may require the
+// chrome://flags/#enable-web-bluetooth-new-permissions-backend flag.
+async function refreshKnownDevices() {
+  if (!navigator.bluetooth || !navigator.bluetooth.getDevices) {
     return;
   }
+  try {
+    const list = await navigator.bluetooth.getDevices();
+    knownMap = new Map(list.map((d) => [d.id, d]));
+    knownDevices.value = list.map((d) => ({
+      id: d.id,
+      name: d.name || "Unnamed device",
+      active: !!(d.gatt && d.gatt.connected),
+    }));
+  } catch {
+    knownDevices.value = [];
+  }
+}
 
-  setStatus("Opening the browser device chooser... pick your Clawd.");
-  device = await navigator.bluetooth.requestDevice({
-    acceptAllDevices: true,
-    optionalServices: [UUID.ledService, UUID.configService],
-  });
-  device.addEventListener("gattserverdisconnected", () => {
-    connected.value = false;
-    setStatus("Device disconnected.");
-  });
+// Shared GATT setup used by both the chooser flow and the known-device list.
+async function connectToDevice(target) {
+  device = target;
+  device.removeEventListener("gattserverdisconnected", onDisconnected);
+  device.addEventListener("gattserverdisconnected", onDisconnected);
 
-  setStatus("Connecting...");
+  setStatus(`Connecting to ${device.name || "Clawd"}...`);
   const server = await device.gatt.connect();
   const ledService = await server.getPrimaryService(UUID.ledService);
   const configService = await server.getPrimaryService(UUID.configService);
@@ -348,6 +364,34 @@ async function connect() {
   await loadState();
   connected.value = true;
   setStatus(`Connected to ${device.name || "Clawd"}.`, "ready");
+  await refreshKnownDevices();
+}
+
+async function connect() {
+  if (!navigator.bluetooth) {
+    setStatus(
+      "Web Bluetooth is not available. Use Chrome or Edge, served over https:// " +
+        "or http://localhost (not file://).",
+      "error",
+    );
+    return;
+  }
+
+  setStatus("Opening the browser device chooser... pick your Clawd.");
+  const chosen = await navigator.bluetooth.requestDevice({
+    acceptAllDevices: true,
+    optionalServices: [UUID.ledService, UUID.configService],
+  });
+  await connectToDevice(chosen);
+}
+
+// Reconnect to a device from the known-device list, no chooser needed.
+async function connectKnown(id) {
+  const target = knownMap.get(id);
+  if (!target) {
+    throw new Error("That device is no longer available. Use CONNECT.");
+  }
+  await connectToDevice(target);
 }
 
 function disconnect() {
@@ -356,6 +400,7 @@ function disconnect() {
   }
   connected.value = false;
   setStatus("Disconnected.");
+  refreshKnownDevices();
 }
 
 function requireConnection() {
@@ -407,7 +452,9 @@ onMounted(() => {
         "https:// or http://localhost.",
       "error",
     );
+    return;
   }
+  refreshKnownDevices();
 });
 </script>
 
@@ -428,9 +475,23 @@ onMounted(() => {
         Pair <b>clawd</b> in your OS Bluetooth settings first, then connect.
         Chrome / Edge only.
       </p>
+      <ul v-if="knownDevices.length" class="known">
+        <li v-for="d in knownDevices" :key="d.id">
+          <button
+            class="known-item"
+            :class="{ active: d.active }"
+            :disabled="connected"
+            @click="run(connectKnown(d.id))"
+          >
+            <span class="known-dot" aria-hidden="true"></span>
+            <span class="known-name">{{ d.name }}</span>
+            <span class="known-go">{{ d.active ? "LINKED" : "CONNECT" }}</span>
+          </button>
+        </li>
+      </ul>
       <div class="ctl">
         <button class="btn primary" :disabled="connected" @click="run(connect())">
-          CONNECT
+          {{ knownDevices.length ? "PAIR NEW" : "CONNECT" }}
         </button>
         <button class="btn" :disabled="!connected" @click="disconnect()">DROP</button>
       </div>
@@ -633,6 +694,72 @@ onMounted(() => {
 .ctl {
   display: flex;
   gap: 10px;
+}
+
+.known {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.known-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.known-item:hover:not(:disabled) {
+  border-color: var(--vp-c-brand-3);
+  color: var(--vp-c-brand-1);
+}
+
+.known-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.known-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vp-c-gutter);
+}
+
+.known-item.active .known-dot {
+  background: #2f8f5b;
+}
+
+.known-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.known-go {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--vp-c-text-2);
 }
 
 input,
