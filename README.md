@@ -11,12 +11,12 @@ nRF52840. It can type over Bluetooth LE or USB-HID, run from a LiPo battery, and
 sleep deeply when it is not in use.
 
 It is meant to be a tiny, customisable shortcut pad: map the buttons to free
-keys like `F13`/`F14`, media controls, or your own app shortcuts.
+keys like `Enter`/`Down Arrow`, media controls, or your own app shortcuts.
 
 ## Highlights
 
 - Two-button BLE + USB keyboard firmware for XIAO nRF52840.
-- Default keys are `F13` and `F14`, so they are easy to bind in other tools.
+- Default keys are `Enter` (button 1) and `Down Arrow` (button 2).
 - Runtime BLE configuration for key mappings, device name, and the external LED.
 - Confirmed BLE pairing, battery reporting, LiPo charging, and deep sleep.
 - Browser control panel (Web Bluetooth) for LED, buttons, and name.
@@ -112,3 +112,20 @@ Before adding model files on a new machine, install Git LFS and run:
 ```sh
 git lfs install
 ```
+
+## Attribution
+
+The Clawd enclosure design is based on the
+[Claude Code Mascot Fidget Toy](https://www.myminifactory.com/object/3d-print-claude-code-mascot-fidget-toy-791307)
+by **白林 (@user6961502839)** on MyMiniFactory, licensed under
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+## License
+
+The firmware and site source code (`program/`, `docs/`, `Makefile`) are released
+under the **MIT License** — see [`LICENSE`](LICENSE).
+
+The 3D model files in `models/` are derived from the original design above and
+are therefore released under **CC BY-NC-SA 4.0** — see
+[`models/LICENSE`](models/LICENSE). This means the models are for
+non-commercial use only, and any derivative works must carry the same license.

@@ -56,10 +56,10 @@
 // by default on Windows/macOS/Linux - perfect to map in your own tools.
 // For a free *combo* instead, use the Hyper modifier set:
 //   (KEYBOARD_MODIFIER_LEFTCTRL|KEYBOARD_MODIFIER_LEFTSHIFT|KEYBOARD_MODIFIER_LEFTALT|KEYBOARD_MODIFIER_LEFTGUI)
-#define BUTTON_1_MOD      0                            // button 1: F13
-#define BUTTON_1_CODE     HID_KEY_F13
-#define BUTTON_2_MOD      0                            // button 2: F14
-#define BUTTON_2_CODE     HID_KEY_F14
+#define BUTTON_1_MOD      0                            // button 1: Enter
+#define BUTTON_1_CODE     HID_KEY_RETURN
+#define BUTTON_2_MOD      0                            // button 2: Down Arrow
+#define BUTTON_2_CODE     HID_KEY_ARROW_DOWN
 
 #define DEBOUNCE_MS       15           // button debounce window
 #define KEY_TAP_MS        8            // gap between key-down and key-up

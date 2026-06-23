@@ -15,9 +15,8 @@ battery**, charges it, and **deep-sleeps** to last for months.
 - **Confirmed pairing**: a new BLE bond must be approved on the device with the
   buttons, so strangers can't silently pair.
 
-By default Button 1 sends **F13** and Button 2 sends **F14** — "free" keys that
-nothing uses by default, ideal for mapping in your own tools. Each button is a
-`modifier + keycode` pair you change in `xiao_ble_keyboard.ino`.
+By default Button 1 sends **Enter** and Button 2 sends **Down Arrow**. Each
+button is a `modifier + keycode` pair you change in `xiao_ble_keyboard.ino`.
 
 > Reference: [Seeed Studio XIAO nRF52840 wiki](https://wiki.seeedstudio.com/XIAO_BLE/)
 
@@ -185,7 +184,7 @@ Examples (8-byte hex to the keymap characteristic):
 | `A` / `Enter`                   | `00 00 04 00 00 00 28 00` |
 | `Ctrl+Shift+T` / `Esc`          | `00 03 17 00 00 00 29 00` |
 | `Volume +` / `Play-Pause`       | `01 00 E9 00 01 00 CD 00` |
-| defaults `F13` / `F14`          | `00 00 68 00 00 00 69 00` |
+| defaults `Enter` / `Down Arrow` | `00 00 28 00 00 00 51 00` |
 
 Handy **keyboard** codes (HID usage IDs): `A`=`04` … `Z`=`1D`, `1`=`1E` … `0`=`27`,
 `Enter`=`28`, `Esc`=`29`, `Tab`=`2B`, `Space`=`2C`, `F1`=`3A` … `F12`=`45`,
@@ -453,12 +452,13 @@ Edit the configuration block at the top of `xiao_ble_keyboard.ino`:
   plain keys *and* combos work the same way (over both USB and BLE):
   ```cpp
   // button = BUTTON_x_MOD , BUTTON_x_CODE
-  #define BUTTON_1_MOD   0              // F13 (a "free" key)
-  #define BUTTON_1_CODE  HID_KEY_F13
+  #define BUTTON_1_MOD   0              // Enter
+  #define BUTTON_1_CODE  HID_KEY_RETURN
   ```
-  | You want        | `..._MOD`                                            | `..._CODE`    |
-  | --------------- | ---------------------------------------------------- | ------------- |
-  | free key `F13`  | `0`                                                  | `HID_KEY_F13` |
+  | You want        | `..._MOD`                                            | `..._CODE`         |
+  | --------------- | ---------------------------------------------------- | ------------------ |
+  | `Enter`         | `0`                                                  | `HID_KEY_RETURN`   |
+  | free key `F13`  | `0`                                                  | `HID_KEY_F13`      |
   | plain `a`       | `0`                                                  | `HID_KEY_A`   |
   | digit `9`       | `0`                                                  | `HID_KEY_9`   |
   | Ctrl + 9        | `KEYBOARD_MODIFIER_LEFTCTRL`                          | `HID_KEY_9`   |
