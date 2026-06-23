@@ -2,6 +2,10 @@
 
 ![Clawd keyboard preview](models/view.jpeg)
 
+**Live site:** <https://lusaxy.github.io/claude-keyboard/> — landing page with the
+preview, model downloads, a setup guide, the rendered firmware/README docs, and
+the browser control panel (at `/app/`).
+
 **Clawd Keyboard** is a small two-button keyboard built around the Seeed Studio XIAO
 nRF52840. It can type over Bluetooth LE or USB-HID, run from a LiPo battery, and
 sleep deeply when it is not in use.
@@ -18,13 +22,49 @@ keys like `F13`/`F14`, media controls, or your own app shortcuts.
 - Browser control panel (Web Bluetooth) for LED, buttons, and name.
 - Printable mascot-style enclosure and FreeCAD sources in `models/`.
 
+## Components
+
+- **Seeed Studio XIAO nRF52840** — the main microcontroller board, with BLE and USB support.
+- **LiPo battery [150mAh - 300mAh]** — powers the XIAO and can be charged via USB.
+- **2x Kailh Hot-swappable PCB Socket Hot Plug A** — allows easy replacement of the keyboard switches.
+- **2x Universal Instantly Custom Double-Layer Keycaps with Transparent Cover Cap** — keycaps for the buttons.
+- **Dip Switch 2** — on/off and usb/ble mode selection.
+- **2x Led Yellow** — LED for custom (EYES), better square shape or little bit file.
+- **2x 300-390 Ohm Resistors** — for the LED.
+- **2x Mechanical Keyboard Switches** — the two buttons for the keyboard.
+- **3D-printed clawd enclosure** — top and bottom parts, with some transparent areas.
+
+You need soldering and some 28AWG wire to connect the battery and switches to the XIAO.
+
 ## Repository
 
 | Path | Contents |
 | --- | --- |
 | `program/xiao_ble_keyboard/` | Arduino firmware and detailed build/flash notes. |
-| `app/` | Web Bluetooth control panel for LED, keymap, and device name changes. |
+| `Makefile` | Convenience targets that drive the site (`make`, `make docs-build`, …). |
+| `docs/` | Self-contained VitePress project (its own `package.json`): landing, setup guide, models page, and the Web Bluetooth control app (`docs/.vitepress/theme/components/ClawdApp.vue`). |
+| `docs/scripts/prepare.mjs` | Build helper: copies the model files into `docs/public/models` and generates the firmware/README doc pages from source. |
 | `models/` | FreeCAD sources, printable 3MF files, drawing export, and preview image. |
+
+### Develop the site
+
+From the repository root:
+
+```sh
+make               # install deps (first run) and start the dev server
+make docs-server   # same as `make` — start the dev server
+make docs-build    # production build into docs/.vitepress/dist
+make docs-preview  # build, then serve the production output
+make docs-clean    # remove deps, build output, and generated pages
+```
+
+Or work inside `docs/` directly with `npm install` / `npm run dev|build|preview`.
+
+`dev`/`build` first run `docs/scripts/prepare.mjs`, which pulls the model files
+into `docs/public/models` and regenerates `docs/firmware.md` and `docs/readme.md`
+from the source README files (both are git-ignored). GitHub Pages builds and
+deploys the site via `.github/workflows/pages.yml` (Node + VitePress, with Git
+LFS enabled so the model binaries and preview image are real files).
 
 ## Models
 
@@ -48,7 +88,9 @@ setup, and upload troubleshooting.
 
 ## Control App
 
-The `app/` folder is a small **Web Bluetooth** control panel that runs in the
+Open it on the live site at
+<https://lusaxy.github.io/claude-keyboard/app>, or run the site locally with
+`npm run dev`. It is a small **Web Bluetooth** control panel that runs in the
 browser — no install. After pairing with **clawd**, it can:
 
 - set the external LED brightness;
@@ -57,7 +99,8 @@ browser — no install. After pairing with **clawd**, it can:
 - reset the keymap or name to firmware defaults.
 
 Use Chrome or Edge (desktop or Android), served over `https://` or
-`http://localhost`. See [`app/README.md`](app/README.md).
+`http://localhost`. The app lives in
+`docs/.vitepress/theme/components/ClawdApp.vue`.
 
 ## Git LFS
 

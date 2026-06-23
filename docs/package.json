@@ -1,0 +1,18 @@
+{
+  "name": "clawd-site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "VitePress site for the Clawd two-button BLE keyboard.",
+  "scripts": {
+    "predev": "node scripts/prepare.mjs",
+    "dev": "vitepress dev",
+    "prebuild": "node scripts/prepare.mjs",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.3",
+    "vue": "^3.5.13"
+  }
+}
