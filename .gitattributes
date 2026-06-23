@@ -1,2 +1,6 @@
 # Keep mechanical models, renders, and photos in Git LFS.
 models/** filter=lfs diff=lfs merge=lfs -text
+
+# Text files in models/ are plain git — not LFS.
+models/*.md -filter -diff -merge text
+models/LICENSE -filter -diff -merge text

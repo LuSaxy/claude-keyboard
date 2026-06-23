@@ -1,0 +1,30 @@
+{
+  "files": {
+    "LICENSE": {
+      "lines_added": 27,
+      "lines_removed": 0
+    },
+    "models/LICENSE": {
+      "lines_added": 24,
+      "lines_removed": 0
+    },
+    "README.md": {
+      "lines_added": 29,
+      "lines_removed": 12
+    },
+    "program/xiao_ble_keyboard/xiao_ble_keyboard.ino": {
+      "lines_added": 4,
+      "lines_removed": 4
+    },
+    "program/xiao_ble_keyboard/README.md": {
+      "lines_added": 12,
+      "lines_removed": 12
+    },
+    ".gitattributes": {
+      "lines_added": 6,
+      "lines_removed": 2
+    }
+  },
+  "total_lines_added": 102,
+  "total_lines_removed": 30
+}
