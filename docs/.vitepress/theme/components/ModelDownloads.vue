@@ -4,6 +4,13 @@ import { withBase } from "vitepress";
 
 const TYPES = {
   "3mf": { tag: "3D print", note: "Printable mesh (3MF)" },
+  stl: { tag: "3D print", note: "Printable V2 part (millimetres)" },
+  ket: { tag: "Ket source", note: "Editable CAD + PCB project; remote assets need network" },
+  step: { tag: "CAD", note: "Assembly geometry — not a single printable object" },
+  zip: { tag: "Package", note: "Prototype fabrication / handoff archive — review before ordering" },
+  csv: { tag: "Assembly", note: "BOM or component placement list" },
+  json: { tag: "Report", note: "Machine-readable verification / manufacturing information" },
+  md: { tag: "Guide", note: "Read the prototype limitations and assembly instructions" },
   fcstd: { tag: "FreeCAD", note: "Editable CAD source" },
   svg: { tag: "Drawing", note: "Vector drawing export" },
   jpeg: { tag: "Image", note: "Render / photo" },

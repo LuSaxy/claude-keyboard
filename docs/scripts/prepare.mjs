@@ -32,13 +32,21 @@ async function copyModels() {
   await mkdir(publicModels, { recursive: true });
 
   const files = [];
-  for (const name of (await readdir(modelsSrc)).sort()) {
-    const src = path.join(modelsSrc, name);
-    const info = await stat(src);
-    if (!info.isFile()) continue;
-    await cp(src, path.join(publicModels, name));
-    files.push({ name, size: info.size });
+  async function walk(relative = "") {
+    for (const entry of (await readdir(path.join(modelsSrc, relative), { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
+      const name = path.posix.join(relative, entry.name);
+      if (entry.isDirectory()) { await walk(name); continue; }
+      if (!entry.isFile()) continue;
+      const src = path.join(modelsSrc, name);
+      const info = await stat(src);
+      const dest = path.join(publicModels, name);
+      await mkdir(path.dirname(dest), { recursive: true });
+      await cp(src, dest);
+      files.push({ name, size: info.size });
+    }
   }
+  await walk();
+  files.sort((a, b) => Number(b.name.startsWith("v2/")) - Number(a.name.startsWith("v2/")) || a.name.localeCompare(b.name));
 
   await writeFile(
     path.join(publicModels, "manifest.json"),
@@ -61,6 +69,7 @@ async function generateReadmePage() {
   // Point repo-relative doc links at the rendered VitePress pages, and resolve
   // models/* images & links to the public path (served from docs/public/models).
   md = md
+    .replaceAll("](models/v2/README.md)", "](/v2)")
     .replaceAll("](program/xiao_ble_keyboard/README.md)", "](/firmware)")
     .replaceAll("](docs/app/README.md)", "](/app)")
     .replaceAll("](app/README.md)", "](/app)")
@@ -72,4 +81,6 @@ async function generateReadmePage() {
 const files = await copyModels();
 await generateFirmwarePage();
 await generateReadmePage();
+const v2 = await readFile(path.join(modelsSrc, "v2", "README.md"), "utf8");
+await writeFile(path.join(docsDir, "v2.md"), frontmatter({ title: "V2 prototype", outline: "deep" }) + v2.replaceAll("](../LICENSE)", "](https://github.com/LuSaxy/claude-keyboard/blob/main/models/LICENSE)"));
 console.log(`prepared: ${files.length} model file(s), firmware.md, readme.md`);

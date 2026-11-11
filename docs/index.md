@@ -7,7 +7,7 @@ hero:
   tagline: A BLE + USB-HID shortcut pad on the XIAO nRF52840. Map the buttons to F13/F14, media keys, or your own shortcuts — all from the browser.
   image:
     src: /models/view.jpeg
-    alt: Clawd two-button keyboard
+    alt: Legacy Clawd enclosure preview; current V2 prototype files are on the Models page
   actions:
     - theme: brand
       text: Setup guide
@@ -27,5 +27,5 @@ features:
   - title: Browser control panel
     details: Adjust the LED, remap buttons, and rename the device over Web Bluetooth — nothing to install.
   - title: Printable enclosure
-    details: A mascot-style case with ready-to-print 3MF parts and full FreeCAD sources to fork.
+    details: V2 prototype with editable Ket source, STL parts and PCB files; legacy FreeCAD/3MF files remain available. Review the manufacturing notes before ordering.
 ---

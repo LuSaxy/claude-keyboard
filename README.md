@@ -1,6 +1,12 @@
 # Claude Keyboard - Clawd
 
-![Clawd keyboard preview](models/view.jpeg)
+![Legacy Clawd keyboard preview](models/view.jpeg)
+
+> The image above shows the legacy enclosure. The latest **V2 prototype** is
+> in [`models/v2/`](models/v2/README.md): editable Ket source, seven printable
+> STLs, assembly STEP, Gerbers and BOM/CPL. It is **not production-approved**;
+> slide-switch fit, antenna keepouts and the new shoulder-button firmware
+> require review before ordering. The original files remain for reference.
 
 **Live site:** <https://lusaxy.github.io/claude-keyboard/> — landing page with the
 preview, model downloads, a setup guide, the rendered firmware/README docs, and
@@ -68,7 +74,19 @@ LFS enabled so the model binaries and preview image are real files).
 
 ## Models
 
-The current model assets are:
+### V2 prototype (current CAD/PCB revision)
+
+Start with [`models/v2/README.md`](models/v2/README.md) for printing, opening the
+`.ket` file in a new Ket project, manufacturing handoff and unresolved issues.
+
+- [`clawd-v2.ket`](models/v2/clawd-v2.ket) — editable source, PCB and routing.
+- [`clawd-v2-assembly.step`](models/v2/clawd-v2-assembly.step) — CAD geometry backup.
+- [`clawd-v2-gerber.zip`](models/v2/pcb/clawd-v2-gerber.zip) — Gerber/drill package.
+- [`clawd-v2-jlcpcb-prototype.zip`](models/v2/pcb/clawd-v2-jlcpcb-prototype.zip) — assembly/quote handoff plus preflight notes.
+
+### Legacy V1
+
+The original model assets are retained unchanged:
 
 - `models/view.jpeg` - preview image used above.
 - `models/mascot-top.3mf` and `models/mascot-bottom.3mf` - printable enclosure parts.

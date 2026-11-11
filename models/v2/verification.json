@@ -1,0 +1,356 @@
+{
+  "stage": "prototype-not-production-approved",
+  "features": 104,
+  "checks": [
+    {
+      "name": "front_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "front_shell and back_shell do not overlap"
+    },
+    {
+      "name": "mx1_vs_front",
+      "kind": "no_overlap",
+      "note": "MX clips latch under the plate",
+      "ok": true,
+      "detail": "mx1 and front_shell overlap by 0.360 mm³ (allowed 0.5)",
+      "ms": 636
+    },
+    {
+      "name": "mx2_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "mx2 and front_shell overlap by 0.360 mm³ (allowed 0.5)",
+      "ms": 600
+    },
+    {
+      "name": "cap1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "cap1 and front_shell do not overlap"
+    },
+    {
+      "name": "cap2_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "cap2 and front_shell do not overlap"
+    },
+    {
+      "name": "cap1_in_well",
+      "kind": "min_distance",
+      "note": "keycaps move freely in the well",
+      "ok": true,
+      "detail": "distance cap1↔front_shell = 0.971 mm (min 0.3)"
+    },
+    {
+      "name": "caps_apart",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance cap1↔cap2 ≥ 0.850 mm (min 0.4)"
+    },
+    {
+      "name": "xiao_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_U1 and back_shell do not overlap",
+      "ms": 259
+    },
+    {
+      "name": "lipo_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "lipo and back_shell do not overlap"
+    },
+    {
+      "name": "lipo_vs_xiao",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "lipo and part_U1 do not overlap"
+    },
+    {
+      "name": "j1_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_J1 and back_shell do not overlap"
+    },
+    {
+      "name": "j1_vs_lipo",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_J1 and lipo do not overlap"
+    },
+    {
+      "name": "k1_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_K1 and back_shell do not overlap"
+    },
+    {
+      "name": "k2_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_K2 and back_shell do not overlap"
+    },
+    {
+      "name": "board_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "board and back_shell do not overlap"
+    },
+    {
+      "name": "board_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "board and front_shell do not overlap"
+    },
+    {
+      "name": "dip1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_SW1 and front_shell do not overlap"
+    },
+    {
+      "name": "dip2_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_SW2 and front_shell do not overlap"
+    },
+    {
+      "name": "l1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_SW3 and front_shell do not overlap"
+    },
+    {
+      "name": "r1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_R1 and front_shell do not overlap"
+    },
+    {
+      "name": "l1cap_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "shoulder_l and front_shell do not overlap"
+    },
+    {
+      "name": "r1cap_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "shoulder_r and front_shell do not overlap"
+    },
+    {
+      "name": "l1cap_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "shoulder_l and back_shell do not overlap"
+    },
+    {
+      "name": "r1cap_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "shoulder_r and back_shell do not overlap"
+    },
+    {
+      "name": "l1_rest",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance shoulder_l↔part_SW3 ≥ 0.050 mm (min 0.02)"
+    },
+    {
+      "name": "r1_rest",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance shoulder_r↔part_SW4 ≥ 0.050 mm (min 0.02)"
+    },
+    {
+      "name": "l1cap_vs_dip",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "shoulder_l and part_SW1 do not overlap"
+    },
+    {
+      "name": "d1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_D1 and front_shell do not overlap"
+    },
+    {
+      "name": "r2_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_R2 and front_shell do not overlap"
+    },
+    {
+      "name": "bezel_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "usb_bezel and back_shell do not overlap"
+    },
+    {
+      "name": "bezel_vs_usb",
+      "kind": "no_overlap",
+      "note": "USB-C shell sits inside the bezel opening",
+      "ok": true,
+      "detail": "usb_bezel and part_U1 do not overlap",
+      "ms": 230
+    },
+    {
+      "name": "cap_l_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "eye_cap_l and front_shell do not overlap"
+    },
+    {
+      "name": "cap_r_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "eye_cap_r and front_shell do not overlap"
+    },
+    {
+      "name": "lipo_vs_k1",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "lipo and part_K1 do not overlap"
+    },
+    {
+      "name": "lipo_vs_k2",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "lipo and part_K2 do not overlap"
+    },
+    {
+      "name": "lipo_under_parts",
+      "kind": "min_distance",
+      "note": "40x35x5 LiPo clears the lowest part",
+      "ok": true,
+      "detail": "distance lipo↔part_J1 = 0.300 mm (min 0.3)"
+    },
+    {
+      "name": "lipo_fits_w",
+      "kind": "expr",
+      "ok": true,
+      "detail": "lipo_w <= 2*cav_x-2 holds"
+    },
+    {
+      "name": "lipo_fits_l",
+      "kind": "expr",
+      "ok": true,
+      "detail": "lipo_l <= cav_y1-cav_y0-1 holds"
+    },
+    {
+      "name": "pcb_support_gap",
+      "kind": "expr",
+      "note": "nominal contact: printing and PCB thickness tolerance can still leave a gap or create pressure",
+      "ok": true,
+      "detail": "pcb_hold_gap >= 0 and pcb_hold_gap <= 0.05 holds"
+    },
+    {
+      "name": "left_support_no_collision",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "arm_press_l and board do not overlap"
+    },
+    {
+      "name": "right_support_no_collision",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "arm_press_r and board do not overlap"
+    },
+    {
+      "name": "screw_head_room",
+      "kind": "expr",
+      "note": "space only; verify actual screw head dimensions",
+      "ok": true,
+      "detail": "screw_head_clear_d >= 4.4 and screw_head_clear_h >= 2.2 holds"
+    }
+  ],
+  "drc": [],
+  "unrouted": [],
+  "warnings": [
+    {
+      "name": "mx1",
+      "warnings": [
+        "the result has 7 separate solids"
+      ]
+    },
+    {
+      "name": "cap1",
+      "warnings": [
+        "the result has 2 separate solids"
+      ]
+    },
+    {
+      "name": "mx2",
+      "warnings": [
+        "the result has 7 separate solids"
+      ]
+    },
+    {
+      "name": "cap2",
+      "warnings": [
+        "the result has 2 separate solids"
+      ]
+    },
+    {
+      "name": "part_U1",
+      "warnings": [
+        "the result has 84 separate solids"
+      ]
+    },
+    {
+      "name": "part_K1",
+      "warnings": [
+        "the result has 3 separate solids"
+      ]
+    },
+    {
+      "name": "part_K2",
+      "warnings": [
+        "the result has 3 separate solids"
+      ]
+    }
+  ],
+  "outputs": {
+    "stl/clawd-v2-bottom.stl": {
+      "bytes": 162484,
+      "sha256": "23786f5c153d47de0dc849ceb5844c0008667dd36fb9c31fd8bf8e5903d5f1ac"
+    },
+    "stl/clawd-v2-top.stl": {
+      "bytes": 196884,
+      "sha256": "cee6427a59c24263eddda08fd81d81a133996a63c19cd95817b03098b316a473"
+    },
+    "stl/clawd-v2-button-left.stl": {
+      "bytes": 20684,
+      "sha256": "8ed716d3654c657ed0bc35e830b767aa0407fdf80f91dbfee827dc1ec51793ee"
+    },
+    "stl/clawd-v2-button-right.stl": {
+      "bytes": 20684,
+      "sha256": "b70635598f73f8c4a975f780807ea09680e4619afd6fe214bae8b8cbe2a18158"
+    },
+    "stl/clawd-v2-eye-left.stl": {
+      "bytes": 684,
+      "sha256": "450dce26ffaaa6affdbe4a52e55c1578ef92f683a3f44cd8a5aa6d1fa1cdb1eb"
+    },
+    "stl/clawd-v2-eye-right.stl": {
+      "bytes": 684,
+      "sha256": "a0a4c615678e4379ab36de1e1a4b7fb2e24e002d99c3e8a4e593f7a71b81a0b8"
+    },
+    "stl/clawd-v2-usb-bezel.stl": {
+      "bytes": 28084,
+      "sha256": "19520881dcec21e0cbfc5e45dfadff8867adb5e9192e56f57b21c8931ceace20"
+    },
+    "clawd-v2-assembly.step": {
+      "bytes": 27838532,
+      "sha256": "5cffcdf105857d8dd7b781382f8f72171deeb520d8c88728df28e9601a593f11"
+    },
+    "pcb/clawd-v2-gerber.zip": {
+      "bytes": 121322,
+      "sha256": "984546293a86eb11f88d9a5506153d0f24b81f0edd11fe460b1a1b2c3348f8df"
+    },
+    "pcb/clawd-v2-jlcpcb-prototype.zip": {
+      "bytes": 125151,
+      "sha256": "8e490fd81143438626c33855301703353b09a2c7d2d20d742dd682cfea00e1b4"
+    }
+  }
+}
