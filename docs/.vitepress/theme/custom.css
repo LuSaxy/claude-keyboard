@@ -95,3 +95,16 @@
   border: 1px solid var(--vp-c-divider);
   background: #fff;
 }
+
+/* Home hero: the 3D view needs real room below the title on narrow screens
+   (the default theme overlaps the hero image with negative margins). */
+@media (max-width: 959px) {
+  .VPHero.has-image .image {
+    margin: 0 -24px 8px;
+  }
+  .VPHero.has-image .image-container {
+    width: 100%;
+    max-width: 520px;
+    height: 360px;
+  }
+}

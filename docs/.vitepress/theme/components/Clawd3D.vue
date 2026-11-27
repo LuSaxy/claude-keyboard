@@ -153,18 +153,27 @@ onMounted(async () => {
       const o = OFFSETS[k] ?? [0, 0, 0];
       parts.push({ obj: child, base: child.position.clone(), off: new THREE.Vector3(o[0], o[2], -o[1]) });
     }
-    setExplode = (t) => { for (const p of parts) p.obj.position.copy(p.base).addScaledVector(p.off, t); };
+    // Compact (home hero): close up when assembled, pull back as it comes apart.
+    const frame = (t: number) => {
+      const y = props.compact ? 6 + 32 * t : 22;
+      const dist = props.compact ? 155 + 150 * t : 230;
+      const dir = camera.position.clone().sub(controls.target);
+      if (dir.lengthSq() < 1e-6) dir.set(0.55, 0.45, 0.7);
+      controls.target.set(center.x, baseY + y, center.z);
+      camera.position.copy(controls.target).add(dir.normalize().multiplyScalar(dist));
+    };
+    setExplode = (t) => {
+      for (const p of parts) p.obj.position.copy(p.base).addScaledVector(p.off, t);
+      frame(t);
+    };
     setEdges = (on) => { for (const l of lines) l.visible = on; };
-    setExplode(explode.value);
-    setEdges(edges.value);
 
-    // Frame the assembled model, with room to explode upwards.
     const box = new THREE.Box3().setFromObject(root);
     const center = box.getCenter(new THREE.Vector3());
-    center.y += props.compact ? 36 : 22;
-    controls.target.copy(center);
-    const dist = props.compact ? 310 : 230;
-    camera.position.copy(center).add(new THREE.Vector3(0.55, 0.45, 0.7).normalize().multiplyScalar(dist));
+    const baseY = center.y;
+    camera.position.set(0.55, 0.45, 0.7);
+    setExplode(explode.value);
+    setEdges(edges.value);
 
     const resize = () => {
       const w = el.clientWidth, h = el.clientHeight;
@@ -228,7 +237,7 @@ onBeforeUnmount(() => {
     <div v-if="loading" class="status">Loading 3D model…</div>
     <div v-if="hovered" class="label">{{ hovered }}</div>
     <div class="bar">
-      <button type="button" class="btn primary" @click="toggleExplode">
+      <button v-if="!props.compact" type="button" class="btn primary" @click="toggleExplode">
         {{ explode > 0.5 ? "Assemble" : "Take apart" }}
       </button>
       <input v-model.number="explode" class="slider" type="range" min="0" max="1" step="0.01" aria-label="Explode" />
@@ -252,7 +261,7 @@ onBeforeUnmount(() => {
   margin: 16px 0;
 }
 .clawd3d.compact {
-  height: 400px;
+  height: 520px;
   border: none;
   background: transparent;
   margin: 0;
@@ -299,6 +308,10 @@ onBeforeUnmount(() => {
 }
 .btn.primary { background: var(--vp-c-brand-3); border-color: var(--vp-c-brand-3); color: var(--vp-c-white); }
 .btn.primary:hover { background: var(--vp-c-brand-2); }
+.compact .bar { left: 20%; right: 20%; }
+@media (max-width: 959px) {
+  .clawd3d.compact { height: 360px; }
+}
 .slider { flex: 1; min-width: 60px; accent-color: var(--vp-c-brand-1); }
 .chk { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 </style>
