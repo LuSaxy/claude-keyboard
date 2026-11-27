@@ -15,15 +15,16 @@ const failed = ref("");
 const hovered = ref("");
 
 // Explode offsets in Ket millimetres [x, y, z] (Z up, +Y towards the back).
+// The eyes stay in the top shell and the USB bezel in the bottom shell.
 const OFFSETS: Record<string, [number, number, number]> = {
   back_shell: [0, 0, -14],
   lipo: [0, 0, -2],
   battery_plate: [0, 0, 10],
-  usb_bezel: [0, 26, -14],
+  usb_bezel: [0, 0, -14],
   board: [0, 0, 22],
   front_shell: [0, 0, 48],
-  eye_cap_l: [0, 0, 62],
-  eye_cap_r: [0, 0, 62],
+  eye_cap_l: [0, 0, 48],
+  eye_cap_r: [0, 0, 48],
   mx1: [0, 0, 70],
   mx2: [0, 0, 70],
   cap1: [0, 0, 88],
@@ -88,22 +89,21 @@ onMounted(async () => {
     const THREE = await import("three");
     const { OrbitControls } = await import("three/examples/jsm/controls/OrbitControls.js");
     const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
-    const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
     const { MeshoptDecoder } = await import("three/examples/jsm/libs/meshopt_decoder.module.js");
     const { mergeVertices } = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     el.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+    // Plain CAD-style shading (like Ket's "normal" renders): matte, no reflections.
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
     sun.position.set(60, 120, 80);
-    scene.add(sun, new THREE.AmbientLight(0xffffff, 0.35));
+    const fill = new THREE.DirectionalLight(0xffffff, 0.5);
+    fill.position.set(-80, 40, -60);
+    scene.add(sun, fill, new THREE.HemisphereLight(0xffffff, 0x8a8a8a, 1.3));
 
     const camera = new THREE.PerspectiveCamera(32, 1, 1, 2000);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -127,8 +127,15 @@ onMounted(async () => {
     root.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (mesh.isMesh) {
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-        if (mat.transparent) mat.depthWrite = false;
+        const src = mesh.material as THREE.MeshStandardMaterial;
+        mesh.material = new THREE.MeshLambertMaterial({
+          color: src.color,
+          transparent: src.transparent,
+          opacity: src.opacity,
+          depthWrite: !src.transparent,
+          side: THREE.DoubleSide,
+        });
+        src.dispose();
         // Weld the quantized vertices first, or every seam shows up as an edge.
         const welded = mergeVertices(mesh.geometry.clone().deleteAttribute("normal"), 1e-3);
         mesh.geometry = welded.toNonIndexed();
@@ -199,7 +206,6 @@ onMounted(async () => {
       renderer.domElement.removeEventListener("pointermove", onMove);
       renderer.domElement.removeEventListener("pointerleave", onLeave);
       controls.dispose();
-      pmrem.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
