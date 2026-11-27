@@ -1,0 +1,626 @@
+{
+  "stage": "prototype-not-production-approved",
+  "source": "Ket project clawd_v2, operations 1-335 (socket supports on the battery plate; rev B silkscreen at J1)",
+  "features": 162,
+  "checks": [
+    {
+      "name": "front_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "front_shell and back_shell do not overlap"
+    },
+    {
+      "name": "mx1_vs_front",
+      "kind": "no_overlap",
+      "note": "MX clips latch under the plate",
+      "ok": true,
+      "detail": "mx1 and front_shell overlap by 0.360 mm³ (allowed 0.5)"
+    },
+    {
+      "name": "mx2_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "mx2 and front_shell overlap by 0.360 mm³ (allowed 0.5)"
+    },
+    {
+      "name": "cap1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "cap1 and front_shell do not overlap"
+    },
+    {
+      "name": "cap2_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "cap2 and front_shell do not overlap"
+    },
+    {
+      "name": "cap1_in_well",
+      "kind": "min_distance",
+      "note": "keycaps move freely in the well",
+      "ok": true,
+      "detail": "distance cap1↔front_shell = 0.971 mm (min 0.3)"
+    },
+    {
+      "name": "caps_apart",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance cap1↔cap2 ≥ 0.850 mm (min 0.4)"
+    },
+    {
+      "name": "xiao_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_U1 and back_shell do not overlap"
+    },
+    {
+      "name": "lipo_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "lipo and back_shell do not overlap"
+    },
+    {
+      "name": "lipo_vs_xiao",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "lipo and part_U1 do not overlap"
+    },
+    {
+      "name": "j1_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_J1 and back_shell do not overlap"
+    },
+    {
+      "name": "j1_vs_lipo",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_J1 and lipo do not overlap"
+    },
+    {
+      "name": "k1_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_K1 and back_shell do not overlap"
+    },
+    {
+      "name": "k2_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_K2 and back_shell do not overlap"
+    },
+    {
+      "name": "board_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "board and back_shell do not overlap"
+    },
+    {
+      "name": "board_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "board and front_shell do not overlap"
+    },
+    {
+      "name": "dip1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_SW1 and front_shell do not overlap"
+    },
+    {
+      "name": "dip2_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_SW2 and front_shell do not overlap"
+    },
+    {
+      "name": "l1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_SW3 and front_shell do not overlap"
+    },
+    {
+      "name": "r1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_R1 and front_shell do not overlap"
+    },
+    {
+      "name": "d1_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_D1 and front_shell do not overlap"
+    },
+    {
+      "name": "r2_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "part_R2 and front_shell do not overlap"
+    },
+    {
+      "name": "bezel_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "usb_bezel and back_shell do not overlap"
+    },
+    {
+      "name": "bezel_vs_usb",
+      "kind": "no_overlap",
+      "note": "USB-C shell sits inside the bezel opening",
+      "ok": true,
+      "detail": "usb_bezel and part_U1 do not overlap"
+    },
+    {
+      "name": "cap_l_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "eye_cap_l and front_shell do not overlap"
+    },
+    {
+      "name": "cap_r_vs_front",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "eye_cap_r and front_shell do not overlap"
+    },
+    {
+      "name": "lipo_vs_k1",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "lipo and part_K1 do not overlap"
+    },
+    {
+      "name": "lipo_vs_k2",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "lipo and part_K2 do not overlap"
+    },
+    {
+      "name": "lipo_under_parts",
+      "kind": "min_distance",
+      "note": "40x35x5 LiPo clears the lowest part",
+      "ok": true,
+      "detail": "distance lipo↔part_J1 = 0.300 mm (min 0.3)"
+    },
+    {
+      "name": "lipo_fits_w",
+      "kind": "expr",
+      "ok": true,
+      "detail": "lipo_w <= 2*cav_x-2 holds"
+    },
+    {
+      "name": "lipo_fits_l",
+      "kind": "expr",
+      "ok": true,
+      "detail": "lipo_l <= cav_y1-cav_y0-1 holds"
+    },
+    {
+      "name": "pcb_support_gap",
+      "kind": "expr",
+      "note": "nominal contact: printing and PCB thickness tolerance can still leave a gap or create pressure",
+      "ok": true,
+      "detail": "pcb_hold_gap >= 0 and pcb_hold_gap <= 0.05 holds"
+    },
+    {
+      "name": "left_support_no_collision",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "arm_press_l and board do not overlap"
+    },
+    {
+      "name": "right_support_no_collision",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "arm_press_r and board do not overlap"
+    },
+    {
+      "name": "lipo_under_shield",
+      "kind": "min_distance",
+      "note": "user's choice: 0.2 mm over the LiPo so the USB strip fits",
+      "ok": true,
+      "detail": "distance lipo↔battery_plate = 0.200 mm (min 0.2)"
+    },
+    {
+      "name": "shield_printable",
+      "kind": "expr",
+      "ok": true,
+      "detail": "shield_t >= 1.2 holds"
+    },
+    {
+      "name": "shield_vs_k1",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance part_K1↔battery_plate = 1.750 mm (min 0.5)"
+    },
+    {
+      "name": "shield_vs_k2",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance part_K2↔battery_plate = 1.800 mm (min 0.5)"
+    },
+    {
+      "name": "shield_vs_xiao",
+      "kind": "min_distance",
+      "note": "USB-C shell sits just above the 0.4 mm strip",
+      "ok": true,
+      "detail": "distance part_U1↔battery_plate = 0.140 mm (min 0.1)"
+    },
+    {
+      "name": "plate_vs_mx1",
+      "kind": "min_distance",
+      "note": "switch posts under the board",
+      "ok": true,
+      "detail": "distance mx1↔battery_plate = 2.243 mm (min 0.3)"
+    },
+    {
+      "name": "plate_vs_mx2",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance mx2↔battery_plate = 2.243 mm (min 0.3)"
+    },
+    {
+      "name": "plate_vs_j1",
+      "kind": "min_distance",
+      "note": "J1 and the plug sit in the pocket",
+      "ok": true,
+      "detail": "distance part_J1↔battery_plate = 0.500 mm (min 0.4)"
+    },
+    {
+      "name": "plate_vs_back",
+      "kind": "no_overlap",
+      "note": "rests on the ledges",
+      "ok": true,
+      "detail": "battery_plate and back_shell do not overlap"
+    },
+    {
+      "name": "plate_vs_board",
+      "kind": "min_distance",
+      "note": "pillars just under the board",
+      "ok": true,
+      "detail": "distance battery_plate↔board ≥ 0.100 mm (min 0.05)"
+    },
+    {
+      "name": "lipo_vs_ledges",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance lipo↔back_shell = 0.200 mm (min 0.2)"
+    },
+    {
+      "name": "thin_printable",
+      "kind": "expr",
+      "ok": true,
+      "detail": "thin_t >= 0.8 holds"
+    },
+    {
+      "name": "usb_strip_printable",
+      "kind": "expr",
+      "ok": true,
+      "detail": "usb_t >= 0.4 holds"
+    },
+    {
+      "name": "ledge_b_vs_j1",
+      "kind": "min_distance",
+      "note": "back ledge stays clear of the battery socket",
+      "ok": true,
+      "detail": "distance part_J1↔back_shell = 0.511 mm (min 0.1)"
+    },
+    {
+      "name": "ledge_bl_vs_j1",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance part_J1↔back_shell = 0.511 mm (min 0.3)"
+    },
+    {
+      "name": "cradle_below_lipo_top",
+      "kind": "expr",
+      "note": "the LiPo can be lifted out of the cradle",
+      "ok": true,
+      "detail": "cradle_h <= lipo_t-1 holds"
+    },
+    {
+      "name": "lipo_in_cradle",
+      "kind": "min_distance",
+      "note": "cradle and ledges clear the LiPo",
+      "ok": true,
+      "detail": "distance lipo↔back_shell = 0.200 mm (min 0.2)"
+    },
+    {
+      "name": "lane_vs_k1",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "cable_lane and part_K1 do not overlap"
+    },
+    {
+      "name": "lane_vs_mx1",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "cable_lane and mx1 do not overlap"
+    },
+    {
+      "name": "lane_vs_board",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "cable_lane and board do not overlap"
+    },
+    {
+      "name": "lane_vs_plate",
+      "kind": "no_overlap",
+      "note": "the leads lie on the plate, not through the pillars",
+      "ok": true,
+      "detail": "cable_lane and battery_plate do not overlap"
+    },
+    {
+      "name": "lane_vs_back",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "cable_lane and back_shell do not overlap"
+    },
+    {
+      "name": "lane_vs_j1",
+      "kind": "no_overlap",
+      "ok": true,
+      "detail": "cable_lane and part_J1 do not overlap"
+    },
+    {
+      "name": "l1_lever_rest",
+      "kind": "min_distance",
+      "note": "lever finger clears the L1 knob at rest",
+      "ok": true,
+      "detail": "distance part_SW3↔front_shell = 0.100 mm (min 0.05)"
+    },
+    {
+      "name": "r1_lever_rest",
+      "kind": "min_distance",
+      "ok": true,
+      "detail": "distance part_SW4↔front_shell = 0.100 mm (min 0.05)"
+    },
+    {
+      "name": "leaf_printable",
+      "kind": "expr",
+      "ok": true,
+      "detail": "leaf_t >= 0.8 holds"
+    },
+    {
+      "name": "lever_reaches",
+      "kind": "expr",
+      "note": "small rest gap so 0.2 mm switch travel is reached",
+      "ok": true,
+      "detail": "lev_rest <= 0.15 holds"
+    },
+    {
+      "name": "lever_over_lip",
+      "kind": "expr",
+      "note": "the lever swings above the bottom shell lip",
+      "ok": true,
+      "detail": "lev_z0 >= split+lip_h+lip_c+0.2 holds"
+    },
+    {
+      "name": "peg_fits_hole",
+      "kind": "expr",
+      "note": "0.1 mm radial play in the 2.2 mm tab hole",
+      "ok": true,
+      "detail": "loc_peg_d <= 2.2-0.15 and loc_peg_d >= 2.2-0.3 holds"
+    },
+    {
+      "name": "peg_above_arm",
+      "kind": "expr",
+      "note": "peg ends inside the board, clear of the bottom shell arm",
+      "ok": true,
+      "detail": "pcb_top-loc_peg_len >= pcb_z+0.2 holds"
+    },
+    {
+      "name": "dip_window_height",
+      "kind": "expr",
+      "note": "MSK12C02 body is 1.45 mm (datasheet): 0.25 mm above it",
+      "ok": true,
+      "detail": "dip_top >= pcb_top+1.45+0.2 holds"
+    },
+    {
+      "name": "snap_interference",
+      "kind": "expr",
+      "note": "enough to click, little enough to close by hand",
+      "ok": true,
+      "detail": "snap_r-lip_c >= 0.15 and snap_r-lip_c <= 0.3 holds"
+    },
+    {
+      "name": "snap_dimple_wall",
+      "kind": "expr",
+      "note": "lip left behind each dimple",
+      "ok": true,
+      "detail": "lip_t-(snap_r+snap_c-lip_c) >= 0.6 holds"
+    },
+    {
+      "name": "icon_line_printable",
+      "kind": "expr",
+      "note": "icon strokes at least 0.6 mm (1.5 nozzle widths)",
+      "ok": true,
+      "detail": "icon_w >= 0.6 holds"
+    },
+    {
+      "name": "lever_low_clear",
+      "kind": "expr",
+      "note": "lower paddle stays >= 0.9 mm from the board edge when pressed (max ~0.6 mm travel at the free end)",
+      "ok": true,
+      "detail": "wall-lev_low_t+gap >= 0.9 holds"
+    },
+    {
+      "name": "lever_centred",
+      "kind": "expr",
+      "note": "paddle centred near the switch knob and the leaf",
+      "ok": true,
+      "detail": "abs((lev_bot+lev_top)/2-(split+2)) <= 1 holds"
+    }
+  ],
+  "drc": [
+    {
+      "rule": "hole_to_copper",
+      "message": "track 7 is 0.205 mm from the 4.000 mm hole at [9.525, 0.250]; keep 0.25",
+      "at": [
+        9.525,
+        0.25
+      ],
+      "objects": [
+        "track 7"
+      ]
+    },
+    {
+      "rule": "hole_to_copper",
+      "message": "track 17 is 0.225 mm from the 3.000 mm hole at [-12.065, -4.830]; keep 0.25",
+      "at": [
+        -12.065,
+        -4.83
+      ],
+      "objects": [
+        "track 17"
+      ]
+    },
+    {
+      "rule": "hole_to_copper",
+      "message": "track 17 is 0.225 mm from the 3.000 mm hole at [6.985, -4.830]; keep 0.25",
+      "at": [
+        6.985,
+        -4.83
+      ],
+      "objects": [
+        "track 17"
+      ]
+    },
+    {
+      "rule": "hole_to_copper",
+      "message": "U1.8 is -0.400 mm from the 0.800 mm hole at [3.500, 22.125]; keep 0.25",
+      "at": [
+        3.5,
+        22.125
+      ],
+      "objects": [
+        "U1.8"
+      ]
+    },
+    {
+      "rule": "hole_to_copper",
+      "message": "U1.9 is -0.400 mm from the 0.800 mm hole at [6.500, 22.125]; keep 0.25",
+      "at": [
+        6.5,
+        22.125
+      ],
+      "objects": [
+        "U1.9"
+      ]
+    },
+    {
+      "rule": "hole_to_copper",
+      "message": "U1.13 is 0.008 mm from the 0.800 mm hole at [15.500, 20.500]; keep 0.25",
+      "at": [
+        15.5,
+        20.5
+      ],
+      "objects": [
+        "U1.13"
+      ]
+    },
+    {
+      "rule": "hole_to_copper",
+      "message": "U1.13 is -0.400 mm from the 0.800 mm hole at [15.500, 22.300]; keep 0.25",
+      "at": [
+        15.5,
+        22.3
+      ],
+      "objects": [
+        "U1.13"
+      ]
+    }
+  ],
+  "drc_note": "The PCB is unchanged since operations 1-283 (the Gerbers in pcb/). These hole_to_copper findings come from a stricter DRC in the current Ket build. Review them before ordering another batch.",
+  "unrouted": [],
+  "warnings": [
+    {
+      "name": "mx1",
+      "warnings": [
+        "the result has 7 separate solids"
+      ]
+    },
+    {
+      "name": "cap1",
+      "warnings": [
+        "the result has 2 separate solids"
+      ]
+    },
+    {
+      "name": "mx2",
+      "warnings": [
+        "the result has 7 separate solids"
+      ]
+    },
+    {
+      "name": "cap2",
+      "warnings": [
+        "the result has 2 separate solids"
+      ]
+    }
+  ],
+  "outputs": {
+    "3mf/clawd-v2-battery-plate-small-lipo.3mf": {
+      "bytes": 2242,
+      "sha256": "ce706f5a52fe592cb588d024cf8cd3617441f5704e364efcb7a1736012fd4a4e"
+    },
+    "3mf/clawd-v2-battery-plate.3mf": {
+      "bytes": 2128,
+      "sha256": "1b94d5a7219f7bc032fe22d55f30add2871cff4ae7a7941fed4dc96b372b36d9"
+    },
+    "3mf/clawd-v2-bottom-print.3mf": {
+      "bytes": 74115,
+      "sha256": "293e7d7ade53e808ed257eb970a1356efae948cf9c80667596070cc83cd277c0"
+    },
+    "3mf/clawd-v2-top-print.3mf": {
+      "bytes": 61604,
+      "sha256": "b873fb3c5ea8b9de3b1dc691f87a17f7513b590a0150e6ea93c2de0e9a3285b7"
+    },
+    "clawd-v2-assembly.step": {
+      "bytes": 34635258,
+      "sha256": "ed61921a8296dcdcdec6e44c9430e7fdb07d3f9a2129747e616c300f59a4d0b0"
+    },
+    "pcb/clawd-v2-gerber.zip": {
+      "bytes": 121322,
+      "sha256": "984546293a86eb11f88d9a5506153d0f24b81f0edd11fe460b1a1b2c3348f8df"
+    },
+    "pcb/clawd-v2-jlcpcb-prototype.zip": {
+      "bytes": 125151,
+      "sha256": "8e490fd81143438626c33855301703353b09a2c7d2d20d742dd682cfea00e1b4"
+    },
+    "stl/clawd-v2-battery-plate-small-lipo.stl": {
+      "bytes": 7084,
+      "sha256": "652803271d3b84cd97384fa9df4dcbea5d94e50973a54ffcba5386b07e520f1a"
+    },
+    "stl/clawd-v2-battery-plate.stl": {
+      "bytes": 6284,
+      "sha256": "449ae240006b12fe5e49bef5565c0c5781bf88a8e095ed212b1eb1ec3628b2f7"
+    },
+    "stl/clawd-v2-bottom-small-lipo.stl": {
+      "bytes": 324684,
+      "sha256": "0601e4a9278e2f00ef101676464b1e8b842c778fdeb3b810ee213462708b09cc"
+    },
+    "stl/clawd-v2-bottom.stl": {
+      "bytes": 324684,
+      "sha256": "856a4dd0b0e23996e405afd3c3da4486742f7726d704046dbca768a94e2208f2"
+    },
+    "stl/clawd-v2-eye-left.stl": {
+      "bytes": 684,
+      "sha256": "6cac59464836313cd7b11a925e70dd63e2f3c9f24b767b0204766b17727414a7"
+    },
+    "stl/clawd-v2-eye-right.stl": {
+      "bytes": 684,
+      "sha256": "91bdd44c835b46986fe078578f946ed25113ebd8dc5801c4fa0c8e781dcac45e"
+    },
+    "stl/clawd-v2-top.stl": {
+      "bytes": 285084,
+      "sha256": "aa738015c74aa1f62c86a49cfa3171e8f89c38ff4318fb56743cfe80eb450de4"
+    },
+    "stl/clawd-v2-usb-bezel.stl": {
+      "bytes": 28084,
+      "sha256": "a9fcdcad68c027d4aac6463bcdea8941ad5aa126f606f6c4efcb9b872c00911b"
+    },
+    "pcb/rev-b/clawd-v2-gerber-rev-b.zip": {
+      "bytes": 137601,
+      "sha256": "ba9100413a14634d6207a10cf5cbac188472d06a19b002dfd3ebfc157b06539d"
+    }
+  }
+}

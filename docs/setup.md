@@ -11,36 +11,42 @@ buttons. Set aside an afternoon — most of the time is printing.
 
 ## 1 - What you'll need
 
-Clawd is built around a single **Seeed Studio XIAO nRF52840** (the *Sense*
-variant works too). The rest are common keyboard and hobby parts — plan on a
-little soldering with thin (~28 AWG) wire to connect the battery and switches.
+The full parts list with LCSC numbers, links and prices is on the
+**[Parts list (BOM)](/bom)** page. In short:
 
-| Qty | Part | Notes |
-| --- | --- | --- |
-| 1× | XIAO nRF52840 | Or the Sense variant. Brains + radio + USB-C + LiPo charger. |
-| 1× | Protected LiPo cell (150–300 mAh) | Single cell with a PCM. Charges over USB-C automatically. |
-| 2× | Mechanical keyboard switches | The two keys. The board's only onboard button is RESET. |
-| 2× | Kailh hot-swap sockets | Soldered in so the switches drop in/out without re-soldering. |
-| 2× | Keycaps (double-layer, transparent cap) | Snap onto the switches; the clear cap holds a custom legend. |
-| 1× | 2-position DIP switch | One slider sets USB-HID vs BLE at boot; the other is battery ON/OFF. |
-| 2× | Yellow LED | The mascot's eyes — BLE-controlled. |
-| 2× | Resistor, 330 Ω (300–390 Ω) | Current-limit for the LEDs — one **per** LED. |
-| — | Wire, solder, USB-C cable | Thin (~28 AWG) hookup wire and a **data**-capable USB-C cable for flashing. |
-| 1× | Printed enclosure | Top + bottom shells — printed in the next step. |
+- **Seeed Studio XIAO nRF52840 Sense** (or the plain XIAO nRF52840). **Not the
+  Plus / Sense Plus**: its extra pads bridge the board's pads when soldered.
+- The Clawd V2 PCB with its parts: two Kailh hot-swap sockets, two slide
+  switches (MODE, POWER), two side-push switches (L1, R1), two yellow LEDs with
+  330 Ω resistors, and a JST PH 2.0 battery socket.
+- A **protected 1S LiPo** with a JST PH 2.0 plug, up to 40 × 35 × 5 mm.
+  **Check its polarity before plugging it in** (see [Battery](/bom#battery)).
+- Two MX switches and two 1u keycaps.
+- The printed case and a USB-C cable that carries **data**.
 
 ## 2 - Print the case
 
-The mascot-style enclosure is two parts. Download the printable 3MF files from
-the [Models page](/models) and slice them for your printer.
+Download the V2 print files from the [Models page](/models) and slice them for
+your printer. The 3MF files hold several bodies (one per filament).
 
-- Print `mascot-top.3mf` and `mascot-bottom.3mf`.
-- PLA or PETG is fine; ~0.2 mm layers, 15–20% infill.
-- **Bottom shell:** prints without supports — orient it flat-side down.
-- **Top shell:** print it top-side **down** and enable supports.
-- Test-fit the XIAO, buttons, and switches in the dry print before soldering.
+| Part | File | Filament |
+| --- | --- | --- |
+| Top shell + eye covers | `3mf/clawd-v2-top-print.3mf` | Orange shell, clear/yellow translucent eyes (two materials) |
+| Bottom shell + USB bezel | `3mf/clawd-v2-bottom-print.3mf` | Orange shell, clear bezel (two materials) |
+| Battery plate | `3mf/clawd-v2-battery-plate.3mf` | Any, one colour |
 
-FreeCAD sources (`mascot.FCStd`, `assembly.FCStd`) are on the
-[Models page](/models) if you want to tweak the fit.
+Single-material printer: use the STLs in `stl/` instead and glue the clear
+parts in after a dry fit. For a 30 × 37 × 4 mm LiPo use the `-small-lipo`
+bottom shell and battery plate.
+
+- PLA or PETG; ~0.2 mm layers, 15–20 % infill.
+- **Battery plate:** flat, the two socket-support posts up.
+- The L1/R1 shoulder buttons are flexible paddles in the shells: no separate
+  parts to print.
+- Dry-fit the PCB, battery and plate before soldering anything permanent.
+
+The editable source is `clawd-v2.ket` (open it in Ket). The V1 FreeCAD/3MF files
+are still on the Models page for reference; do not mix V1 and V2 parts.
 
 ## 3 - Wire the electronics
 
@@ -50,17 +56,23 @@ to the right-side `GND` pin.
 
 | From | To | Notes |
 | --- | --- | --- |
-| `D0` | Button 1 → `GND` | Sends F13 by default |
-| `D1` | Button 2 → `GND` | Sends F14 by default |
+| `D0` | Button 1 (left key) → `GND` | Sends Escape by default |
+| `D1` | Button 2 (right key) → `GND` | Sends Enter by default |
+| `D4` | L1 shoulder → `GND` | V2 board (SW3) · Shift+Tab by default |
+| `D5` | R1 shoulder → `GND` | V2 board (SW4) · Tab by default |
 | `D2` | MODE switch → `GND` | To GND = USB-HID · open = BLE only |
 | `D3` | 330 Ω (300–390 Ω) → LED anode, cathode → `GND` | Active HIGH · one resistor **per** LED (parallel) |
 | `BAT+` | ON/OFF switch → LiPo + | Switch cuts the cell when OFF |
 | `BAT−` | LiPo − | Underside solder pad |
 | USB-C | Power + charge | Automatic — runs the board and charges the cell |
 
-::: warning Check polarity
-There is no reverse-polarity protection on `BAT±` — verify the cell's +/− with a
-meter before connecting, and use a protected (PCM) cell.
+::: danger Check the battery polarity first
+JST PH plugs are not wired the same by every seller, and the board has **no
+reverse-polarity protection**. A reversed cell gets hot and can damage the
+XIAO's charger. On the V2 board, J1 **pin 1 (+)** is the pad next to the small
+silkscreen circle. Plug the cell in with POWER off and measure: you must read
+**+3.6 to +4.2 V** on that pad against GND. Details on the
+[Battery](/bom#battery) page.
 :::
 
 ::: tip LEDs
@@ -77,14 +89,22 @@ Full pinout, chip-pin map, and battery-sense details are in the
 - Seat the XIAO in the bottom shell with the USB-C port lined up to the opening.
 - Mount the two buttons through the top shell's key holes and the MODE / ON-OFF
   switches in their slots.
-- Tuck the LiPo into the free space; keep wires short and away from the buttons.
+- Check the battery plug polarity (see above), then lay the LiPo in its cradle
+  and drop the battery plate on top; run the leads along the left wall into
+  the J1 pocket.
+- Run the solder self-test (`make selftest`) and fix anything it reports.
 - Power-on test **before** closing: plug in USB-C and confirm a short blue LED
-  pulse (advertising).
+  pulse (advertising). With POWER on, the small red **CHG** LED next to the
+  USB-C connector lights while the cell charges.
 - Close the top onto the bottom shell.
 
-::: tip MODE switch is read once at boot
-Leave it on *USB* (to GND) to type over the cable, or *BLE* (open) to only charge
-from a PC. Flip it, then press RESET to apply.
+::: tip Two switches: POWER and MODE
+**POWER** (right, next to R1) connects the battery: OFF cuts it, and the battery
+does not charge while OFF. **MODE** (left, next to L1) decides whether the USB
+cable is also a keyboard: *USB* = it types over the cable, *BLE* = the cable only
+charges. Bluetooth works in both positions. MODE is read once at boot, so press
+RESET after flipping it. The firmware docs explain how to find which position is
+which.
 :::
 
 ## 5 - Flash the firmware
@@ -129,8 +149,17 @@ Now remap the keys, set the LED, or rename the device from the
 [control app](/app) — no install, Chrome / Edge over `https://`.
 
 ::: tip Pairing stuck?
-Clear an old bond with a **bond reset**: hold *both buttons* while powering on
-(or right after RESET) ~5 s until the LED blinks red 3×, then pair again.
+Clear an old bond with a **bond reset**: hold *both keys* (B1 + B2) while
+powering on (or right after RESET) ~5 s until the LED blinks red 3×, then pair
+again.
+:::
+
+::: tip Settings stuck after a firmware update?
+Flashing new firmware keeps the saved settings (key mapping, name, gestures),
+so new defaults do not show if older ones are saved. Wipe them with a
+**settings reset**: hold *both shoulders* (L1 + R1) at power-on ~5 s until the
+LED blinks blue 3×. Bonds are kept. The control app has the same as
+*RESET ALL*, and the serial monitor accepts `R` (`s` prints what is saved).
 :::
 
 ### Status LED cheat-sheet
@@ -141,7 +170,8 @@ Clear an old bond with a **bond reset**: hold *both buttons* while powering on
 | Green flash | A key was sent, or a pairing was accepted |
 | Magenta (steady) | Confirm a new pairing — press Button 1 |
 | Red flash | Pairing rejected / failed |
-| Red ×3 at boot | Stored bonds wiped (bond reset) |
+| Red ×3 at boot | Stored bonds wiped (bond reset, B1 + B2) |
+| Blue ×3 at boot | Saved settings wiped (settings reset, L1 + R1) |
 
 ## That's it
 

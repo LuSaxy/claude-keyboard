@@ -1,9 +1,10 @@
 | Supported Target | XIAO nRF52840 | XIAO nRF52840 Sense |
 | ---------------- | ------------- | ------------------- |
 
-# 2-Button Keyboard (XIAO nRF52840) — BLE + USB, battery
+# Clawd Keyboard (XIAO nRF52840) — BLE + USB, battery
 
-Turns a **Seeed Studio XIAO nRF52840** into a tiny **2-button keyboard** that can
+Turns a **Seeed Studio XIAO nRF52840** into a tiny **2-key keyboard with two
+shoulder buttons** (L1/R1, on the V2 board) that can
 type over **Bluetooth LE** *or* over the **USB cable**, runs from a **LiPo
 battery**, charges it, and **deep-sleeps** to last for months.
 
@@ -15,8 +16,10 @@ battery**, charges it, and **deep-sleeps** to last for months.
 - **Confirmed pairing**: a new BLE bond must be approved on the device with the
   buttons, so strangers can't silently pair.
 
-By default Button 1 sends **Enter** and Button 2 sends **Down Arrow**. Each
-button is a `modifier + keycode` pair you change in `xiao_ble_keyboard.ino`.
+By default Button 1 (left key) sends **Escape**, Button 2 (right key) **Enter**, L1 **Shift+Tab**
+and R1 **Tab**. Each button is a `modifier + keycode` pair you change in
+`xiao_ble_keyboard.ino` or over BLE. Without shoulder buttons wired (V1 build),
+D4/D5 just stay HIGH through the pull-ups and do nothing.
 
 > Reference: [Seeed Studio XIAO nRF52840 wiki](https://wiki.seeedstudio.com/XIAO_BLE/)
 
@@ -49,6 +52,8 @@ XIAO board). Left column = `D0..D6`, right column = power + `D7..D10`:
   ───────────────────────────────────────────────────────────────────────────
    D0  ──[ button 1 ]──────────── GND
    D1  ──[ button 2 ]──────────── GND
+   D4  ──[ L1 shoulder ]────────── GND        V2 board: SW3 (side push)
+   D5  ──[ R1 shoulder ]────────── GND        V2 board: SW4 (side push)
    D2  ──[ MODE slide switch ]─── GND        to GND = USB-HID, open = BLE only
 
    D3  ──┬──[ 330Ω ]──►|── GND               LED 1   (BLE-controlled, active HIGH)
@@ -64,12 +69,14 @@ XIAO board). Left column = `D0..D6`, right column = power + `D7..D10`:
 > The two user LEDs are wired **in parallel, each with its own 330 Ω resistor**
 > (never one shared resistor). They share `D3`, so one BLE command drives both.
 > Don't put the LEDs in **series**: 2× their forward voltage exceeds the 3.3 V rail
-> and they won't light. `D4..D10` stay free for more parts.
+> and they won't light. `D6..D10` stay free for more parts.
 
 | Signal      | Pin         | Chip pin | Notes                                  |
 | ----------- | ----------- | -------- | -------------------------------------- |
 | Button 1    | D0          | P0.02    | to GND                                 |
 | Button 2    | D1          | P0.03    | to GND                                 |
+| L1 shoulder | D4          | P0.04    | to GND (V2: SW3)                       |
+| R1 shoulder | D5          | P0.05    | to GND (V2: SW4)                       |
 | MODE switch | D2          | P0.28    | to GND = USB-HID; open = BLE only      |
 | User LED(s) | D3          | P0.29    | BLE-controlled LED(s), active HIGH, PWM |
 | Battery +   | BAT+        | -        | via ON/OFF switch                      |
@@ -78,7 +85,7 @@ XIAO board). Left column = `D0..D6`, right column = power + `D7..D10`:
 | Charge sel. | P0.13       | -        | internal: HIGH = 50 mA, LOW = 100 mA   |
 
 Notes:
-- D0/D1/D2/D3 are plain GPIOs (D3 = the user LED here); D4..D10 stay free.
+- D0..D5 are plain GPIOs (D3 = the user LED here); D6..D10 stay free.
 - **Power source is automatic**: USB present → board runs from USB and charges the
   cell; USB absent → runs from battery. No switch needed for that.
 - The **ON/OFF switch only cuts the battery** — with USB plugged in the board
@@ -157,21 +164,26 @@ small custom service; the mapping supports **keyboard keys/combos** and
 | UUID                           | Value                                  |
 | ------------------------------ | -------------------------------------- |
 | Service                        | `e0934030-b408-4dcc-b4ca-56d83d7c5fbc` |
-| Keymap characteristic (RW)     | `e0c5d214-8809-4243-afa2-9862d3628c38` |
+| Keymap characteristic (RW, 16 B) | `e0c5d214-8809-4243-afa2-9862d3628c38` |
 | Device name characteristic (RW) | `8adf91b2-c9a1-4c1a-8b76-2ff5be6b86de` |
 | Command characteristic (W)     | `37508895-a542-4ee0-9ab4-b109ce4717de` |
 
 These characteristics require an **encrypted link** (bonded host only). They are
 discovered via **GATT after connecting** (not in the advertising packet).
 
-**Keymap = 8 bytes**, 4 per button (`code` is little-endian 16-bit):
+**Keymap = 16 bytes**, 4 per button in the order button 1, button 2, L1, R1
+(`code` is little-endian 16-bit):
 
 ```
-[ t1, m1, code1_lo, code1_hi,   t2, m2, code2_lo, code2_hi ]
-   │   │      └─ button 1 key code (HID_KEY_* or HID_USAGE_CONSUMER_*)
+[ t1, m1, c1_lo, c1_hi,  t2, m2, c2_lo, c2_hi,  tL, mL, cL_lo, cL_hi,  tR, mR, cR_lo, cR_hi ]
+   │   │     └─ button 1 key code (HID_KEY_* or HID_USAGE_CONSUMER_*)
    │   └─ button 1 modifier bitmask (keyboard only)
    └─ button 1 type: 0 = keyboard, 1 = media/consumer
 ```
+
+An **8-byte write** (older apps) sets only buttons 1 and 2 and leaves L1/R1 as
+they are. A keymap saved by older firmware is kept on upgrade; L1/R1 then start
+with their defaults.
 
 - **type** `0` = keyboard (`mod` + `code`), `1` = media/consumer (`code` only, **BLE only**).
 - **modifier bits**: LCtrl `0x01`, LShift `0x02`, LAlt `0x04`, LGui `0x08`
@@ -179,12 +191,13 @@ discovered via **GATT after connecting** (not in the advertising packet).
 
 Examples (8-byte hex to the keymap characteristic):
 
-| Buttons                         | Bytes                     |
-| ------------------------------- | ------------------------- |
-| `A` / `Enter`                   | `00 00 04 00 00 00 28 00` |
-| `Ctrl+Shift+T` / `Esc`          | `00 03 17 00 00 00 29 00` |
-| `Volume +` / `Play-Pause`       | `01 00 E9 00 01 00 CD 00` |
-| defaults `Enter` / `Down Arrow` | `00 00 28 00 00 00 51 00` |
+| Buttons (B1 / B2 [/ L1 / R1])            | Bytes                                             |
+| ---------------------------------------- | ------------------------------------------------- |
+| `A` / `Enter` (B1/B2 only)               | `00 00 04 00 00 00 28 00`                         |
+| `Ctrl+Shift+T` / `Esc` (B1/B2 only)      | `00 03 17 00 00 00 29 00`                         |
+| `Volume +` / `Play-Pause` (B1/B2 only)   | `01 00 E9 00 01 00 CD 00`                         |
+| defaults `Esc` / `Enter` / `Shift+Tab` / `Tab` | `00 00 29 00 00 00 28 00 00 02 2B 00 00 00 2B 00` |
+| `Enter` / `Down` / `Vol−` / `Vol+`       | `00 00 28 00 00 00 51 00 01 00 EA 00 01 00 E9 00` |
 
 Handy **keyboard** codes (HID usage IDs): `A`=`04` … `Z`=`1D`, `1`=`1E` … `0`=`27`,
 `Enter`=`28`, `Esc`=`29`, `Tab`=`2B`, `Space`=`2C`, `F1`=`3A` … `F12`=`45`,
@@ -213,6 +226,11 @@ Write `0x02` to the **command** characteristic to reset the name back to `clawd`
 
 ### Controlling it with nRF Connect
 
+> **No need to "Forget" the keyboard first.** The firmware accepts two BLE
+> links at once and keeps advertising while one is free, so the control app (or
+> nRF Connect) connects while your computer is still using Clawd as a keyboard.
+> Keys go to every connected host that uses it as a keyboard.
+
 The encrypted LED + config characteristics are easiest to drive from the free
 **nRF Connect for Mobile** app (Nordic, Android/iOS), which handles the bonded
 pairing properly.
@@ -232,10 +250,11 @@ pairing properly.
 | What            | Characteristic                         | Write                      |
 | --------------- | -------------------------------------- | -------------------------- |
 | LED on / off    | `bc6df096-…-8440c14d2ab0` (LED)        | `FF` = full, `80` = half, `00` = off |
-| Key mapping     | `e0c5d214-…-9862d3628c38` (keymap, 8B) | e.g. `0000040000002800`    |
+| Key mapping     | `e0c5d214-…-9862d3628c38` (keymap, 16B; 8B = B1/B2 only) | e.g. `0000040000002800`    |
 | Device name     | `8adf91b2-…-be6b86de` (name, text)     | e.g. `clawd-ray` as UTF-8/text |
 | Reset keys      | `37508895-…-b109ce4717de` (command)    | `01`                       |
 | Reset name      | `37508895-…-b109ce4717de` (command)    | `02`                       |
+| Reset all settings (reboots) | `37508895-…-b109ce4717de` (command) | `03`          |
 
 The 8-byte keymap layout, modifier bits and key/media codes are listed under
 [Configurable keys (BLE)](#configurable-keys-ble) above. Examples (write to the
@@ -278,7 +297,8 @@ board's flash, so it survives reboot and deep sleep.
 > Pick the FQBN that matches **your** board. Check which one is connected with
 > `arduino-cli board list` — the XIAO nRF52840 Sense reports
 > `Seeeduino:nrf52:xiaonRF52840Sense`, the plain one
-> `Seeeduino:nrf52:xiaonRF52840`. The examples below use the Sense FQBN.
+> `Seeeduino:nrf52:xiaonRF52840`, the Plus `Seeeduino:nrf52:xiaonRF52840Plus`
+> (USB id `2886:8064`). The examples below use the Sense FQBN.
 
 ### Arduino IDE
 Open `xiao_ble_keyboard.ino`, choose your board + port, click **Upload**.
@@ -374,9 +394,21 @@ To pair a new device:
    - Do nothing for 30 s → rejected.
 4. Open any text field and press a button; the key is sent (green flash).
 
-**Forget all devices (bond reset):** hold **both buttons** while powering on /
-right after RESET; keep holding ~5 s until the LED blinks **red 3×**. All stored
-bonds are wiped, so you can pair a fresh device.
+**Forget all devices (bond reset):** hold **both keys (B1 + B2)** while
+powering on / right after RESET; keep holding ~5 s until the LED blinks **red
+3×**. All stored bonds are wiped, so you can pair a fresh device.
+
+**Wipe saved settings (settings reset):** hold **both shoulders (L1 + R1)**
+while powering on / right after RESET; keep holding ~5 s until the LED blinks
+**blue 3×**. The key mapping, device name and gesture switches go back to the
+compiled defaults and the board reboots. Bonds are kept.
+
+Flashing new firmware does **not** erase these settings (they live in a small
+file system in the chip's flash, so remaps survive updates). If new defaults do
+not show after an update, older saved settings are still in use: wipe them as
+above, with *RESET ALL* in the control app (command `03`), or with `R` in the
+serial monitor (`make monitor`). `s` there prints what is saved, and the
+firmware prints it once a couple of seconds after the monitor opens.
 
 How it works: the firmware sets `DisplayYesNo` IO capabilities + MITM and uses a
 `pairing-confirm` callback, so modern hosts run BLE numeric comparison and call
@@ -388,10 +420,82 @@ which would need a screen to compare the 6-digit code). Tune with
 > Older "NoInputNoOutput" hosts may negotiate Just Works and skip the prompt.
 > For phones/PCs this is rare; the confirmation prompt is the normal path.
 
+## Motion gestures (XIAO nRF52840 Sense)
+
+With a **XIAO nRF52840 Sense** the built-in motion sensor (LSM6DS3TR-C) adds
+these gestures. Build with the Sense board (`Seeeduino:nrf52:xiaonRF52840Sense`);
+on other boards the code is left out. Use the plain Sense, not the Sense
+**Plus**: its extra pads bridge the board pads (see `../clawd_selftest`).
+
+| Gesture | Default key | How it works |
+| ------- | ----------- | ------------ |
+| **Lift to wake** | – | While asleep the sensor runs at 26 Hz in low power; moving Clawd wakes it, so it is connected before the first press |
+| **Double tap** on the case | Escape | Two quick taps on any side |
+| **Tilt** (off by default) | Arrows: left/right, forward = Up, back = Down | Hold **L1 + R1** and lean Clawd |
+
+**Tilt is off by default**; switch it on in the control app (left/right and
+forward/back separately). It only works while **L1 and R1 are both held**, so
+it never fires while Clawd is just lying on the desk or in your hand:
+
+- the pose when you press the two shoulders is "level";
+- lean more than 15° and the arrow key goes out at once, then repeats: slowly
+  just past 15°, faster as you lean further (fastest from 40°), like a
+  joystick;
+- on a diagonal the larger lean wins;
+- release the shoulders and it stops. Holding L1 + R1 sends no Tab keys.
+
+With tilt on, single L1 / R1 presses go out 120 ms late, so the chord can be
+told apart from a single press. With tilt off they are sent at once.
+
+The gestures are five more entries in the keymap (36 bytes, order B1, B2, L1,
+R1, TAP, TILT LEFT, TILT RIGHT, TILT FORWARD, TILT BACK; shorter writes from
+older apps still work) and the control app shows them when a Sense is
+connected. Each gesture group can be switched off there; the setting is saved
+(Motion characteristic `8f1e6c2a-4b7d-4e2b-9a61-3c5d2e8b7f10`: byte 0 = bit0
+wake, bit1 tap, bit2 tilt left/right, bit3 tilt forward/back; byte 1 = 1 when
+the sensor was found).
+
+**Axes:** the module sits upside down under the PCB. The defaults in
+`motion.h` are measured on the first Sense build (leaning right raises sensor
+X, leaning forward lowers sensor Y). To check another board, open the serial
+monitor (`make monitor`): a `tilt roll=... pitch=...` line shows the angles
+twice a second.
+
+- Lean Clawd to its **right**: `roll` must go positive. If it goes negative,
+  flip `MOTION_TILT_SIGN`.
+- Lean its top **away from you**: `pitch` must go positive. If not, flip
+  `MOTION_PITCH_SIGN`.
+- If leaning right moves `pitch` instead of `roll`, swap `MOTION_TILT_AXIS`
+  (0 ↔ 1).
+
+All three are in `motion.h`, as are `MOTION_TILT_DEG`, `MOTION_TILT_FAST_DEG`,
+`MOTION_REPEAT_SLOW_MS`, `MOTION_REPEAT_FAST_MS`, `MOTION_TAP_THS` and
+`MOTION_WAKE_THS`.
+
 ## Modes & switches
 
-The **MODE switch on D2** is read **once at boot**. Flip it, then press **RESET**
-(or replug) to apply the change.
+There are two slide switches. On the V2 case both stick out of the back wall:
+seen from the front (keys towards you), **MODE is the left one (next to L1)** and
+**POWER is the right one (next to R1)**.
+
+| Switch | What it does | Position A | Position B |
+| ------ | ------------ | ---------- | ---------- |
+| **POWER** (SW2) | Connects or cuts the LiPo | **ON**: runs from the battery | **OFF**: battery disconnected (storage). With USB plugged in the board still runs and the battery does **not** charge. |
+| **MODE** (SW1, D2) | Is the USB cable also a keyboard? | **USB**: over the cable the computer sees a keyboard named *clawd* | **BLE**: the cable only charges; typing goes over Bluetooth |
+
+Bluetooth always works in both MODE positions. MODE only decides whether the
+USB cable is a keyboard too. It is read **once at boot**: after flipping it,
+press **RESET** or replug the cable.
+
+Which way is which depends on the switch part, so check once:
+
+- **MODE:** plug into a computer and press RESET. If a keyboard called *clawd*
+  appears (macOS: System Information → USB) and the keys type over the cable,
+  it is in the **USB** position; otherwise it is **BLE**.
+- **POWER:** unplug USB. If the blue LED pulses (or a key works), it is **ON**;
+  if nothing lights up, it is **OFF**.
+
+Mark the positions on the case once you know them.
 
 | MODE switch (D2) | USB cable to PC | What happens                                       |
 | ---------------- | --------------- | -------------------------------------------------- |
@@ -421,13 +525,13 @@ When does it sleep? (battery only)
 | Advertising, but nobody connects                     | `ADV_TIMEOUT_S`  | default 180 s   |
 | Battery voltage below `VBAT_CUTOFF_MV`               | next measurement | default 3200 mV |
 
-**Waking up:** press either button. System OFF can only be left by a reset, so
+**Waking up:** press any button (keys or shoulders). System OFF can only be left by a reset, so
 the board **reboots**, re-advertises, and reconnects in ~1-3 s. The button press
 that *wakes* the board is consumed by the wake-up (it is **not** typed) — once
 the LED stops pulsing and you're connected, press again to send a key. This is
 the standard trade-off for the lowest possible idle current.
 
-Both buttons are configured as `INPUT_PULLUP_SENSE`, so the GPIO SENSE/DETECT
+All four buttons are configured as `INPUT_PULLUP_SENSE`, so the GPIO SENSE/DETECT
 block triggers the wake when a pin is pulled LOW.
 
 Tuning (top of `xiao_ble_keyboard.ino`):
@@ -452,8 +556,8 @@ Edit the configuration block at the top of `xiao_ble_keyboard.ino`:
   plain keys *and* combos work the same way (over both USB and BLE):
   ```cpp
   // button = BUTTON_x_MOD , BUTTON_x_CODE
-  #define BUTTON_1_MOD   0              // Enter
-  #define BUTTON_1_CODE  HID_KEY_RETURN
+  #define BUTTON_1_MOD   0              // Escape
+  #define BUTTON_1_CODE  HID_KEY_ESCAPE
   ```
   | You want        | `..._MOD`                                            | `..._CODE`         |
   | --------------- | ---------------------------------------------------- | ------------------ |
@@ -498,7 +602,14 @@ to the `BAT +/-` pads (through the ON/OFF switch) and it charges automatically
 whenever USB-C is connected — the CHARGE LED is on while charging, off when full.
 
 With `ENABLE_BATTERY 1` (default) the firmware:
-- reports the level over BLE (Battery Service `0x180F`) every `BATTERY_PERIOD_MS`;
+- reports the level over BLE (Battery Service `0x180F`): measured at boot,
+  again a few seconds after a host connects, then every `BATTERY_PERIOD_MS`,
+  as a notification so macOS / Windows update the shown percentage. The
+  voltage is mapped with a LiPo discharge curve, and changes of 1 % are not
+  sent (noise). While USB is plugged in the reading is the charger's output,
+  which sags and rises with the charge current, so on USB the level only
+  goes up, never down; on battery it follows the cell. The serial monitor
+  shows each value with USB / battery and the charger's charging state;
 - enforces a **low-voltage cutoff**: on battery, if the cell drops below
   `VBAT_CUTOFF_MV` (default 3200 mV) it enters deep sleep to protect it (recover
   by charging). Implausibly low reads (< 2000 mV) are ignored as a sensor glitch.
@@ -546,7 +657,8 @@ set `ENABLE_BATTERY 0`).
 | -------------------------------- | --------------------------------------------------------- |
 | Not in the Bluetooth list        | Confirm the blue LED is pulsing; reset the board.         |
 | Pairing fails / phone gives up   | Watch for the **magenta** LED and press **Button 1** to accept (within 30 s). |
-| Can't pair a new phone           | Old bond may block it; do a **bond reset** (hold both buttons ~5 s at boot). |
+| Can't pair a new phone           | Old bond may block it; do a **bond reset** (hold B1 + B2 ~5 s at boot). |
+| New defaults missing after flashing | Saved settings survive flashing; **settings reset** (hold L1 + R1 ~5 s at boot). |
 | Paired but no keys after re-pair | "Forget" the device on the host, bond-reset on the board, pair again. |
 | Upload hangs / port missing      | Double-tap RESET to enter the `XIAO-BOOT` bootloader.     |
 | Upload fails in WSL / USB-IP     | Use the [manual two-step upload](#manual--two-step-upload-wsl-usb-ip-or-when-auto-reset-fails). |

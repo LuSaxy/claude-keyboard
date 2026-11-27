@@ -11,10 +11,12 @@ const UUID = {
   keymap: "e0c5d214-8809-4243-afa2-9862d3628c38",
   name: "8adf91b2-c9a1-4c1a-8b76-2ff5be6b86de",
   command: "37508895-a542-4ee0-9ab4-b109ce4717de",
+  motion: "8f1e6c2a-4b7d-4e2b-9a61-3c5d2e8b7f10",
 };
 
 const CMD_RESET_KEYMAP = 0x01;
 const CMD_RESET_NAME = 0x02;
+const CMD_RESET_ALL = 0x03;
 
 // Full HID Keyboard/Keypad usage page, grouped for the dropdown. Codes are the
 // standard usage IDs; the firmware accepts any of them (keyboard codes are a
@@ -105,6 +107,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Non-reactive connection handles.
 let device = null;
 let chars = {};
+// True while the user wants to stay connected: an unexpected drop (deep sleep,
+// out of range, firmware reset) then reconnects by itself.
+let wantConnected = false;
+let reconnecting = false;
 // Devices this site already has permission for (Web Bluetooth getDevices()).
 let knownMap = new Map();
 
@@ -118,21 +124,44 @@ const name = ref("");
 const led = ref(0);
 const knownDevices = ref([]); // [{ id, name, active }] from getDevices()
 
-const b1 = reactive(makeButton(0x68));
-const b2 = reactive(makeButton(0x69));
+// Firmware defaults: Escape (left key), Enter (right key), Shift+Tab (L1), Tab (R1), and on a
+// XIAO Sense the gestures: double tap = Escape, tilt = the arrow keys.
+const b1 = reactive(makeButton("B1", 0x29));
+const b2 = reactive(makeButton("B2", 0x28));
+const bl1 = reactive(makeButton("L1", 0x2b, MOD_SHIFT));
+const br1 = reactive(makeButton("R1", 0x2b));
+const gTap = reactive(makeButton("TAP", 0x29, 0, "double tap"));
+const gLeft = reactive(makeButton("TILT ←", 0x50, 0, "tilt left"));
+const gRight = reactive(makeButton("TILT →", 0x4f, 0, "tilt right"));
+const gFwd = reactive(makeButton("TILT ↑", 0x52, 0, "tilt forward (top away from you)"));
+const gBack = reactive(makeButton("TILT ↓", 0x51, 0, "tilt back (top towards you)"));
+const buttons = [b1, b2, bl1, br1];
+const gestures = [gTap, gLeft, gRight, gFwd, gBack];
+// How many keymap entries this firmware has: 2 (old), 4 (shoulders), 7 or 9 (gestures).
+const keymapEntries = ref(9);
+const shoulderSupported = computed(() => keymapEntries.value >= 4);
+// Motion characteristic: null on firmware without it, else
+// { present: Sense sensor found, wake, tap, tilt, pitch }.
+const motion = ref(null);
+const MOTION_WAKE = 0x01;
+const MOTION_TAP = 0x02;
+const MOTION_TILT = 0x04;
+const MOTION_PITCH = 0x08;
 
-function makeButton(code) {
+function makeButton(tag, code, mod = 0, hint = "") {
   return {
+    tag,
+    hint,
     type: TYPE_KEYBOARD,
     code,
     sel: code, // dropdown selection: a real code, or CUSTOM
     custom: false, // raw-code input mode active?
     customInput: "", // text in the custom-code field
     error: "", // validation message for the custom field
-    ctrl: false,
-    shift: false,
-    alt: false,
-    gui: false,
+    ctrl: Boolean(mod & MOD_CTRL),
+    shift: Boolean(mod & MOD_SHIFT),
+    alt: Boolean(mod & MOD_ALT),
+    gui: Boolean(mod & MOD_GUI),
   };
 }
 
@@ -247,22 +276,28 @@ function readButton(button) {
   return { type: button.type, mod, code: button.code };
 }
 
+// 4 bytes per entry: [type, mod, code_lo, code_hi]. Only as many entries as
+// the connected firmware has (8, 16, 28 or 36 bytes).
 function encodeKeymap() {
-  const a = readButton(b1);
-  const b = readButton(b2);
-  return new Uint8Array([
-    a.type, a.mod, a.code & 0xff, a.code >> 8,
-    b.type, b.mod, b.code & 0xff, b.code >> 8,
-  ]);
+  const list = [...buttons, ...gestures].slice(0, keymapEntries.value);
+  return new Uint8Array(
+    list.flatMap((button) => {
+      const k = readButton(button);
+      return [k.type, k.mod, k.code & 0xff, k.code >> 8];
+    }),
+  );
 }
 
 function applyState(state) {
   name.value = state.name || "";
   led.value = state.led;
   const k = state.keymap;
-  if (k && k.length === 8) {
-    setButtonUi(b1, k[0], k[1], k[2] | (k[3] << 8));
-    setButtonUi(b2, k[4], k[5], k[6] | (k[7] << 8));
+  if (k && k.length >= 8) {
+    keymapEntries.value = Math.min(9, Math.floor(k.length / 4));
+    [...buttons, ...gestures].forEach((button, i) => {
+      if (i * 4 + 4 > k.length) return;
+      setButtonUi(button, k[i * 4], k[i * 4 + 1], k[i * 4 + 2] | (k[i * 4 + 3] << 8));
+    });
   }
 }
 
@@ -289,9 +324,9 @@ async function readRetry(characteristic) {
       throw new Error(
         `Could not read from Clawd (${lastError}).\n\n` +
           "If the device LED is MAGENTA, press Button 1 to confirm pairing. " +
-          "If it was paired before with old firmware, remove 'clawd' in your OS " +
-          "Bluetooth settings and bond-reset the device (hold both buttons at boot), " +
-          "then reconnect.",
+          "If this computer paired with Clawd before a bond reset, the old bond no " +
+          "longer matches: remove 'clawd' in the OS Bluetooth settings once and " +
+          "pair again.",
       );
     }
     await sleep(800);
@@ -313,14 +348,94 @@ async function loadState() {
   const keymapView = await readRetry(chars.keymap);
   const keymap = Array.from(new Uint8Array(keymapView.buffer));
   applyState({ led: ledByte, name: deviceName, keymap });
+  motion.value = null;
+  if (chars.motion) {
+    const m = new Uint8Array((await readRetry(chars.motion)).buffer);
+    motion.value = {
+      present: m.length > 1 && m[1] === 1,
+      wake: Boolean(m[0] & MOTION_WAKE),
+      tap: Boolean(m[0] & MOTION_TAP),
+      tilt: Boolean(m[0] & MOTION_TILT),
+      pitch: Boolean(m[0] & MOTION_PITCH),
+    };
+  }
+}
+
+async function saveMotion() {
+  requireConnection();
+  if (!chars.motion || !motion.value) throw new Error("This firmware has no motion settings.");
+  const m = motion.value;
+  const flags =
+    (m.wake ? MOTION_WAKE : 0) |
+    (m.tap ? MOTION_TAP : 0) |
+    (m.tilt ? MOTION_TILT : 0) |
+    (m.pitch ? MOTION_PITCH : 0);
+  await writeValue(chars.motion, new Uint8Array([flags]));
 }
 
 // ----- actions -----
 
 function onDisconnected() {
   connected.value = false;
-  setStatus("Device disconnected.");
   refreshKnownDevices();
+  if (wantConnected && device) {
+    autoReconnect(device);
+  } else {
+    setStatus("Device disconnected.");
+  }
+}
+
+// Clawd drops the link when it deep-sleeps; the next button press wakes it and
+// it advertises again. Keep trying for a while instead of making the user click.
+async function autoReconnect(target) {
+  if (reconnecting) return;
+  reconnecting = true;
+  const deadline = Date.now() + 120000;
+  let delay = 1000;
+  try {
+    while (wantConnected && Date.now() < deadline) {
+      setStatus("Connection lost. Reconnecting... (press any Clawd button to wake it)");
+      try {
+        await connectToDevice(target, { quiet: true });
+        return;
+      } catch {
+        await sleep(delay);
+        delay = Math.min(delay * 2, 8000);
+      }
+    }
+    if (wantConnected) {
+      wantConnected = false;
+      setStatus("Could not reconnect. Wake Clawd with a button press, then press CONNECT.", "error");
+    }
+  } finally {
+    reconnecting = false;
+  }
+}
+
+function withTimeout(promise, ms, message) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+// gatt.connect() can hang or fail once right after the device starts
+// advertising; retry a few times with a timeout before giving up.
+async function gattConnect(target) {
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await withTimeout(target.gatt.connect(), 10000, "Connection timed out.");
+    } catch (error) {
+      lastError = error;
+      try { target.gatt.disconnect(); } catch { /* not connected */ }
+      await sleep(600);
+    }
+  }
+  throw lastError;
 }
 
 // Pull the devices this site has already been granted access to, so the user can
@@ -345,13 +460,14 @@ async function refreshKnownDevices() {
 }
 
 // Shared GATT setup used by both the chooser flow and the known-device list.
-async function connectToDevice(target) {
+async function connectToDevice(target, { quiet = false } = {}) {
   device = target;
   device.removeEventListener("gattserverdisconnected", onDisconnected);
   device.addEventListener("gattserverdisconnected", onDisconnected);
+  wantConnected = true;
 
-  setStatus(`Connecting to ${device.name || "Clawd"}...`);
-  const server = await device.gatt.connect();
+  if (!quiet) setStatus(`Connecting to ${device.name || "Clawd"}...`);
+  const server = await gattConnect(device);
   const ledService = await server.getPrimaryService(UUID.ledService);
   const configService = await server.getPrimaryService(UUID.configService);
   chars = {
@@ -359,12 +475,24 @@ async function connectToDevice(target) {
     keymap: await configService.getCharacteristic(UUID.keymap),
     name: await configService.getCharacteristic(UUID.name),
     command: await configService.getCharacteristic(UUID.command),
+    // Older firmware has no motion characteristic.
+    motion: await configService.getCharacteristic(UUID.motion).catch(() => null),
   };
 
   await loadState();
   connected.value = true;
   setStatus(`Connected to ${device.name || "Clawd"}.`, "ready");
   await refreshKnownDevices();
+}
+
+// A failed manual connect must not leave the auto-reconnect armed.
+async function userConnect(promise) {
+  try {
+    return await promise;
+  } catch (error) {
+    wantConnected = false;
+    throw error;
+  }
 }
 
 async function connect() {
@@ -378,8 +506,11 @@ async function connect() {
   }
 
   setStatus("Opening the browser device chooser... pick your Clawd.");
+  // Current firmware lists its config service in the scan response and keeps
+  // advertising while the computer is connected as a keyboard, so there is no
+  // need to "Forget" it first. The name prefix also finds older firmware.
   const chosen = await navigator.bluetooth.requestDevice({
-    acceptAllDevices: true,
+    filters: [{ services: [UUID.configService] }, { namePrefix: "clawd" }],
     optionalServices: [UUID.ledService, UUID.configService],
   });
   await connectToDevice(chosen);
@@ -395,6 +526,7 @@ async function connectKnown(id) {
 }
 
 function disconnect() {
+  wantConnected = false;
   if (device && device.gatt && device.gatt.connected) {
     device.gatt.disconnect();
   }
@@ -431,10 +563,21 @@ async function saveName() {
 
 async function saveKeys() {
   requireConnection();
-  if (b1.error || b2.error) {
+  if ([...buttons, ...gestures].some((button) => button.error)) {
     throw new Error("Fix the custom key code first.");
   }
   await writeValue(chars.keymap, encodeKeymap());
+}
+
+// Wipe every saved setting (keys, name, gestures); the device reboots, so the
+// link drops and the app reconnects by itself.
+async function resetAll() {
+  requireConnection();
+  if (!confirm("Reset all settings (keys, name, gestures) to the firmware defaults? Clawd reboots.")) {
+    return;
+  }
+  await writeValue(chars.command, new Uint8Array([CMD_RESET_ALL]));
+  setStatus("Settings reset. Clawd is rebooting...");
 }
 
 async function sendCommand(command) {
@@ -454,8 +597,23 @@ onMounted(() => {
     );
     return;
   }
-  refreshKnownDevices();
+  autoConnectKnown();
 });
+
+// One Clawd this site already has permission for: connect to it straight away
+// (gatt.connect needs no click for a permitted device).
+async function autoConnectKnown() {
+  await refreshKnownDevices();
+  if (knownDevices.value.length !== 1 || connected.value) return;
+  const target = knownMap.get(knownDevices.value[0].id);
+  if (!target) return;
+  try {
+    await connectToDevice(target);
+  } catch {
+    wantConnected = false;
+    setStatus("Ready. Press CONNECT (or wake Clawd with a button press).");
+  }
+}
 </script>
 
 <template>
@@ -472,8 +630,8 @@ onMounted(() => {
     <section class="panel">
       <h3>Device</h3>
       <p class="hint">
-        Pair <b>clawd</b> in your OS Bluetooth settings first, then connect.
-        Chrome / Edge only.
+        Press CONNECT and pick your Clawd. It can stay connected to your computer as a
+        keyboard; no need to forget it. Chrome / Edge only.
       </p>
       <ul v-if="knownDevices.length" class="known">
         <li v-for="d in knownDevices" :key="d.id">
@@ -481,7 +639,7 @@ onMounted(() => {
             class="known-item"
             :class="{ active: d.active }"
             :disabled="connected"
-            @click="run(connectKnown(d.id))"
+            @click="run(userConnect(connectKnown(d.id)))"
           >
             <span class="known-dot" aria-hidden="true"></span>
             <span class="known-name">{{ d.name }}</span>
@@ -490,7 +648,7 @@ onMounted(() => {
         </li>
       </ul>
       <div class="ctl">
-        <button class="btn primary" :disabled="connected" @click="run(connect())">
+        <button class="btn primary" :disabled="connected" @click="run(userConnect(connect()))">
           {{ knownDevices.length ? "PAIR NEW" : "CONNECT" }}
         </button>
         <button class="btn" :disabled="!connected" @click="disconnect()">DROP</button>
@@ -530,8 +688,13 @@ onMounted(() => {
     <section class="panel" :class="{ disabled: !connected }">
       <h3>Buttons</h3>
       <div class="keys">
-        <article v-for="(button, i) in [b1, b2]" :key="i" class="key">
-          <span class="tag">B{{ i + 1 }}</span>
+        <article
+          v-for="button in buttons"
+          :key="button.tag"
+          class="key"
+          :class="{ disabled: (button === bl1 || button === br1) && !shoulderSupported }"
+        >
+          <span class="tag">{{ button.tag }}</span>
           <select v-model.number="button.type" @change="onTypeChange(button)">
             <option :value="TYPE_KEYBOARD">Keyboard key</option>
             <option :value="TYPE_MEDIA">Media key</option>
@@ -564,11 +727,75 @@ onMounted(() => {
           </div>
         </article>
       </div>
+      <p v-if="connected && !shoulderSupported" class="hint">
+        This firmware only has B1 and B2. Flash the latest firmware to map the L1 / R1
+        shoulder buttons.
+      </p>
+      <template v-if="connected && keymapEntries >= 9 && motion && motion.present">
+        <h3 class="sub-h">Gestures</h3>
+        <div class="gesture-toggles">
+          <label><input type="checkbox" v-model="motion.wake" @change="run(saveMotion(), 'Gestures saved.')" />Lift to wake</label>
+          <label><input type="checkbox" v-model="motion.tap" @change="run(saveMotion(), 'Gestures saved.')" />Double tap</label>
+          <label><input type="checkbox" v-model="motion.tilt" @change="run(saveMotion(), 'Gestures saved.')" />Tilt left / right</label>
+          <label><input type="checkbox" v-model="motion.pitch" @change="run(saveMotion(), 'Gestures saved.')" />Tilt forward / back</label>
+        </div>
+        <div class="keys">
+          <article
+            v-for="button in gestures"
+            :key="button.tag"
+            class="key"
+            :class="{
+              disabled:
+                (button === gTap && !motion.tap) ||
+                ((button === gLeft || button === gRight) && !motion.tilt) ||
+                ((button === gFwd || button === gBack) && !motion.pitch),
+            }"
+          >
+            <span class="tag" :title="button.hint">{{ button.tag }}</span>
+            <select v-model.number="button.type" @change="onTypeChange(button)">
+              <option :value="TYPE_KEYBOARD">Keyboard key</option>
+              <option :value="TYPE_MEDIA">Media key</option>
+            </select>
+            <select v-model.number="button.sel" @change="onSelChange(button)">
+              <optgroup v-for="[group, items] in groupsFor(button.type)" :key="group" :label="group">
+                <option v-for="[label, value] in items" :key="value" :value="value">
+                  {{ label }}
+                </option>
+              </optgroup>
+              <option :value="CUSTOM">Custom…</option>
+            </select>
+            <template v-if="button.custom">
+              <input
+                class="custom-code"
+                v-model="button.customInput"
+                @input="parseCustom(button)"
+                placeholder="e.g. 0x2F or 47"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <span v-if="button.error" class="custom-msg error">{{ button.error }}</span>
+              <span v-else class="custom-msg">Sends HID {{ toHex(button.code) }}</span>
+            </template>
+            <div class="mods" :class="{ disabled: button.type === TYPE_MEDIA }">
+              <label><input type="checkbox" v-model="button.ctrl" :disabled="button.type === TYPE_MEDIA" />CTRL</label>
+              <label><input type="checkbox" v-model="button.shift" :disabled="button.type === TYPE_MEDIA" />SHFT</label>
+              <label><input type="checkbox" v-model="button.alt" :disabled="button.type === TYPE_MEDIA" />ALT</label>
+              <label><input type="checkbox" v-model="button.gui" :disabled="button.type === TYPE_MEDIA" />GUI</label>
+            </div>
+          </article>
+        </div>
+        <p class="hint">
+          Tilt (off by default): hold L1 + R1 and lean Clawd; the pose when you pressed is level,
+          and the arrow key repeats faster the further you lean. Release to stop. Lift to wake keeps the
+          motion sensor on while Clawd sleeps (slightly shorter battery life).
+        </p>
+      </template>
       <div class="ctl">
         <button class="btn primary" @click="run(saveKeys(), 'Button mapping saved.')">SAVE</button>
-        <button class="btn" @click="run(sendCommand(CMD_RESET_KEYMAP), 'Buttons reset to F13 / F14.')">
-          RESET F13/F14
+        <button class="btn" @click="run(sendCommand(CMD_RESET_KEYMAP), 'Buttons reset to firmware defaults.')">
+          RESET DEFAULTS
         </button>
+        <button class="btn" @click="run(resetAll())">RESET ALL</button>
       </div>
     </section>
 
@@ -900,8 +1127,31 @@ input[type="range"]::-moz-range-thumb {
   gap: 6px;
 }
 
-.mods.disabled {
+.sub-h {
+  margin-top: 18px;
+}
+
+.gesture-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
+.gesture-toggles label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.mods.disabled,
+.key.disabled {
   opacity: 0.4;
+}
+
+.key.disabled {
+  pointer-events: none;
 }
 
 .mods label {

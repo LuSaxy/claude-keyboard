@@ -20,6 +20,7 @@ export default defineConfig({
 
     nav: [
       { text: "Setup", link: "/setup" },
+      { text: "Parts", link: "/bom" },
       { text: "Models", link: "/models" },
       { text: "Control app", link: "/app" },
       { text: "Firmware", link: "/firmware" },
@@ -32,6 +33,7 @@ export default defineConfig({
         items: [
           { text: "Overview", link: "/readme" },
           { text: "Setup guide", link: "/setup" },
+          { text: "Parts list (BOM) & battery", link: "/bom" },
           { text: "Models & downloads", link: "/models" },
           { text: "Control app", link: "/app" },
         ],

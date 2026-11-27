@@ -9,6 +9,7 @@ docs/.vitepress/cache/
 docs/public/models/
 docs/firmware.md
 docs/readme.md
+docs/v2.md
 
 # Python
 __pycache__/

@@ -1,7 +1,7 @@
 /*
- * XIAO nRF52840 - 2-Button Keyboard  (BLE + USB-HID, low power, battery)
+ * XIAO nRF52840 - Clawd Keyboard  (BLE + USB-HID, low power, battery)
  * ----------------------------------------------------------------------------
- * Two physical push-buttons act as a tiny keyboard. The board can type either
+ * Two key switches and two side shoulder buttons (L1/R1) act as a tiny keyboard. The board can type either
  * over Bluetooth LE or over the USB cable, runs from a LiPo battery, charges it,
  * and deep-sleeps to last for months.
  *
@@ -18,6 +18,8 @@
  *
  *   D0  --[ button 1 ]--> GND
  *   D1  --[ button 2 ]--> GND
+ *   D4  --[ L1 shoulder ]--> GND    (V2 board: SW3, side push)
+ *   D5  --[ R1 shoulder ]--> GND    (V2 board: SW4, side push)
  *   D2  --[ MODE switch ]--> GND     closed(LOW)=USB-HID enabled, open(HIGH)=BLE only
  *
  * Buttons/switch use internal pull-ups (released/open = HIGH, pressed/closed = LOW).
@@ -31,7 +33,7 @@
  *                                        still types over BLE
  *                         no cable     -> types over BLE, battery, deep sleeps
  *
- * Deep sleep: only on battery (no USB power). Wakes (resets) on a button press;
+ * Deep sleep: only on battery (no USB power). Wakes (resets) on any button press;
  * the waking press is not typed. RGB LED (active LOW): short blue pulse = waiting,
  * off = connected/idle, green flash = key sent.
  * ----------------------------------------------------------------------------
@@ -45,6 +47,8 @@
 #define BUTTON_1_PIN      D0           // P0.02
 #define BUTTON_2_PIN      D1           // P0.03
 #define MODE_SWITCH_PIN   D2           // P0.28 : LOW = USB-HID, HIGH = BLE only
+#define BUTTON_L1_PIN     D4           // P0.04 : left shoulder (SW3)
+#define BUTTON_R1_PIN     D5           // P0.05 : right shoulder (SW4)
 
 // Each button sends an optional modifier + one key (a HID keycode). Examples:
 //   plain 'a'        :  0,                          HID_KEY_A
@@ -56,12 +60,30 @@
 // by default on Windows/macOS/Linux - perfect to map in your own tools.
 // For a free *combo* instead, use the Hyper modifier set:
 //   (KEYBOARD_MODIFIER_LEFTCTRL|KEYBOARD_MODIFIER_LEFTSHIFT|KEYBOARD_MODIFIER_LEFTALT|KEYBOARD_MODIFIER_LEFTGUI)
-#define BUTTON_1_MOD      0                            // button 1: Enter
-#define BUTTON_1_CODE     HID_KEY_RETURN
-#define BUTTON_2_MOD      0                            // button 2: Down Arrow
-#define BUTTON_2_CODE     HID_KEY_ARROW_DOWN
+#define BUTTON_1_MOD      0                            // button 1 (left key): Escape
+#define BUTTON_1_CODE     HID_KEY_ESCAPE
+#define BUTTON_2_MOD      0                            // button 2 (right key): Enter
+#define BUTTON_2_CODE     HID_KEY_RETURN
+#define BUTTON_L1_MOD     KEYBOARD_MODIFIER_LEFTSHIFT  // L1 shoulder: Shift+Tab
+#define BUTTON_L1_CODE    HID_KEY_TAB
+#define BUTTON_R1_MOD     0                            // R1 shoulder: Tab
+#define BUTTON_R1_CODE    HID_KEY_TAB
+
+// Motion gestures (XIAO nRF52840 Sense only, see motion.h). They use the same
+// keymap as the buttons and can be switched off from the control app.
+#define TAP_MOD           0                            // double tap on the case: Escape
+#define TAP_CODE          HID_KEY_ESCAPE
+#define TILT_LEFT_MOD     0                            // tilt left: Arrow Left
+#define TILT_LEFT_CODE    HID_KEY_ARROW_LEFT
+#define TILT_RIGHT_MOD    0                            // tilt right: Arrow Right
+#define TILT_RIGHT_CODE   HID_KEY_ARROW_RIGHT
+#define TILT_FWD_MOD      0                            // tilt forward (top away): Arrow Up
+#define TILT_FWD_CODE     HID_KEY_ARROW_UP
+#define TILT_BACK_MOD     0                            // tilt back (top towards you): Arrow Down
+#define TILT_BACK_CODE    HID_KEY_ARROW_DOWN
 
 #define DEBOUNCE_MS       15           // button debounce window
+#define SHOULDER_CHORD_MS 120          // L1 + R1 within this = hold-to-tilt (Sense, tilt on)
 #define KEY_TAP_MS        8            // gap between key-down and key-up
 #define LED_FLASH_MS      60           // green flash duration after a keypress
 
@@ -82,11 +104,14 @@
 #define CHARGE_100MA      0            // 0 = 50 mA charge (small cells), 1 = 100 mA
 #define VBAT_MV_PER_LSB   0.87890625f  // 3.6 V ref / 4096 (12-bit)
 #define VBAT_DIVIDER      2.9608f      // (1.0M + 0.51M) / 0.51M  --  CALIBRATE per board
+#define PIN_CHG_STATUS    23           // P0.17, ~CHG of the BQ25101 (LOW = charging)
 
 // --- Security / pairing ---
 #define REQUIRE_PAIR_CONFIRM    1      // 1 = a new pairing must be confirmed on the device
 #define PAIR_CONFIRM_TIMEOUT_MS 30000  // window to accept/reject a new pairing
 #define BOND_RESET_HOLD_MS      5000   // hold BOTH buttons at boot this long to wipe bonds
+#define SETTINGS_RESET_HOLD_MS  5000   // hold L1 + R1 at boot this long to wipe saved settings
+#define BLE_LINKS               2      // a computer typing + the control app at the same time
                                        // Button 1 = accept, Button 2 = reject a pairing.
 
 // ============================================================================
@@ -98,6 +123,7 @@
 #endif
 #include <Adafruit_LittleFS.h>        // tiny filesystem on internal flash (saved settings)
 #include <InternalFileSystem.h>       // provides the global "InternalFS" instance
+#include "motion.h"                   // Sense motion sensor (no-op on other boards)
 
 // Battery / charge pins are provided by the Seeed XIAO nRF52840 variant:
 //   PIN_VBAT (32)             - P0.31 battery-voltage ADC tap
@@ -134,9 +160,13 @@ uint8_t           ledLevel = LED_USER_DEFAULT;
 // and the advertised device name at runtime, then persist it. Encrypted
 // permission => only bonded hosts can write.
 //   Service                   : e0934030-b408-4dcc-b4ca-56d83d7c5fbc
-//   Keymap char       (8 B RW): e0c5d214-8809-4243-afa2-9862d3628c38
+//   Keymap char  (16 B RW, 8 B accepted): e0c5d214-8809-4243-afa2-9862d3628c38
 //   Device name char (<=15 RW): 8adf91b2-c9a1-4c1a-8b76-2ff5be6b86de
 //   Command char      (1 B  W): 37508895-a542-4ee0-9ab4-b109ce4717de
+//   Motion char       (2 B R/W): 8f1e6c2a-4b7d-4e2b-9a61-3c5d2e8b7f10
+//                     [0] = enabled gestures (bit0 wake, bit1 tap,
+//                           bit2 tilt left/right, bit3 tilt forward/back)
+//                     [1] = 1 if this board has the motion sensor (read only)
 uint8_t const CFG_SVC_UUID[16] = {
   0xbc,0x5f,0x7c,0x3d,0xd8,0x56,0xca,0xb4,
   0xcc,0x4d,0x08,0xb4,0x30,0x40,0x93,0xe0
@@ -157,6 +187,11 @@ BLEService        cfgSvc(CFG_SVC_UUID);
 BLECharacteristic keymapChr(KEYMAP_CHR_UUID);
 BLECharacteristic nameChr(NAME_CHR_UUID);
 BLECharacteristic cmdChr(CMD_CHR_UUID);
+uint8_t const MOTION_CHR_UUID[16] = {
+  0x10,0x7f,0x8b,0x2e,0x5d,0x3c,0x61,0x9a,
+  0x2b,0x4e,0x7d,0x4b,0x2a,0x6c,0x1e,0x8f
+};
+BLECharacteristic motionChr(MOTION_CHR_UUID);
 
 uint8_t const desc_hid_report[] = { TUD_HID_REPORT_DESC_KEYBOARD() };
 Adafruit_USBD_HID usb_hid;
@@ -177,6 +212,8 @@ struct Button {
 
 Button btn1 = { BUTTON_1_PIN, HIGH, HIGH, 0 };
 Button btn2 = { BUTTON_2_PIN, HIGH, HIGH, 0 };
+Button btnL1 = { BUTTON_L1_PIN, HIGH, HIGH, 0 };
+Button btnR1 = { BUTTON_R1_PIN, HIGH, HIGH, 0 };
 
 bool     usbMode      = false;   // true = MODE switch selected USB-HID
 uint32_t ledFlashUntil = 0;
@@ -188,11 +225,14 @@ uint32_t lastBat       = 0;
 #define KEYMAP_TYPE_KEYBOARD  0      // mod + code is a keyboard key/combo
 #define KEYMAP_TYPE_CONSUMER  1      // code is a media/consumer usage (BLE only)
 #define KEYMAP_FILE           "/keymap.bin"
-#define KEYMAP_VERSION        1
+#define KEYMAP_VERSION        4      // 4 = 4 buttons + 5 gestures (36 bytes); 3 = 28; 2 = 16; 1 = 8
+#define KEYMAP_KEYS           9
+#define KEYMAP_LEN            (KEYMAP_KEYS * 4)
 #define NAME_FILE             "/name.bin"
 #define NAME_VERSION          1
 #define CMD_RESET_DEFAULTS    0x01   // restore compiled keymap defaults
 #define CMD_RESET_NAME        0x02   // restore compiled device name default
+#define CMD_RESET_ALL         0x03   // wipe all saved settings and reboot (bonds kept)
 
 struct KeyMap {
   uint8_t  type;   // KEYMAP_TYPE_KEYBOARD or KEYMAP_TYPE_CONSUMER
@@ -200,9 +240,29 @@ struct KeyMap {
   uint16_t code;   // keyboard: HID_KEY_* ; consumer: HID_USAGE_CONSUMER_*
 };
 
-KeyMap key1 = { KEYMAP_TYPE_KEYBOARD, BUTTON_1_MOD, BUTTON_1_CODE };
-KeyMap key2 = { KEYMAP_TYPE_KEYBOARD, BUTTON_2_MOD, BUTTON_2_CODE };
+// Order on the wire and in flash: button 1, button 2, L1, R1, double tap,
+// tilt left, tilt right, tilt forward, tilt back.
+#define KEY_TAP         4
+#define KEY_TILT_LEFT   5
+#define KEY_TILT_RIGHT  6
+#define KEY_TILT_FWD    7
+#define KEY_TILT_BACK   8
+const KeyMap defaultKeys[KEYMAP_KEYS] = {
+  { KEYMAP_TYPE_KEYBOARD, BUTTON_1_MOD,    BUTTON_1_CODE    },
+  { KEYMAP_TYPE_KEYBOARD, BUTTON_2_MOD,    BUTTON_2_CODE    },
+  { KEYMAP_TYPE_KEYBOARD, BUTTON_L1_MOD,   BUTTON_L1_CODE   },
+  { KEYMAP_TYPE_KEYBOARD, BUTTON_R1_MOD,   BUTTON_R1_CODE   },
+  { KEYMAP_TYPE_KEYBOARD, TAP_MOD,         TAP_CODE         },
+  { KEYMAP_TYPE_KEYBOARD, TILT_LEFT_MOD,   TILT_LEFT_CODE   },
+  { KEYMAP_TYPE_KEYBOARD, TILT_RIGHT_MOD,  TILT_RIGHT_CODE  },
+  { KEYMAP_TYPE_KEYBOARD, TILT_FWD_MOD,    TILT_FWD_CODE    },
+  { KEYMAP_TYPE_KEYBOARD, TILT_BACK_MOD,   TILT_BACK_CODE   },
+};
+KeyMap keys[KEYMAP_KEYS];
 bool   keymapDirty = false;          // set in BLE callback, flushed to flash in loop()
+bool   motionDirty = false;          // gesture switches changed, flushed in loop()
+bool   resetAllPending = false;      // CMD_RESET_ALL received, handled in loop()
+#define MOTION_FILE           "/motion.bin"
 
 char deviceName[DEVICE_NAME_MAX_LEN + 1] = DEVICE_NAME;
 char usbHidName[DEVICE_NAME_MAX_LEN + 10];
@@ -251,27 +311,32 @@ void setupLedService() {
 
 // ---- Configurable key mapping: pack/unpack, persistence, BLE service ----
 
-// 8-byte wire format: [t1,m1,code1_lo,code1_hi, t2,m2,code2_lo,code2_hi].
-void keymapToBytes(uint8_t out[8]) {
-  out[0] = key1.type; out[1] = key1.mod;
-  out[2] = (uint8_t)(key1.code & 0xFF); out[3] = (uint8_t)(key1.code >> 8);
-  out[4] = key2.type; out[5] = key2.mod;
-  out[6] = (uint8_t)(key2.code & 0xFF); out[7] = (uint8_t)(key2.code >> 8);
+// Wire format, 4 bytes per entry: [type, mod, code_lo, code_hi], in the order
+// button 1, button 2, L1, R1, tap, tilt left, tilt right, tilt forward, tilt
+// back (36 bytes). Shorter writes from older apps (8, 16 or 28 bytes) set only
+// the first entries.
+void keymapToBytes(uint8_t out[KEYMAP_LEN]) {
+  for (uint8_t i = 0; i < KEYMAP_KEYS; i++) {
+    out[i * 4 + 0] = keys[i].type;
+    out[i * 4 + 1] = keys[i].mod;
+    out[i * 4 + 2] = (uint8_t)(keys[i].code & 0xFF);
+    out[i * 4 + 3] = (uint8_t)(keys[i].code >> 8);
+  }
 }
-void bytesToKeymap(const uint8_t in[8]) {
-  key1.type = in[0]; key1.mod = in[1];
-  key1.code = (uint16_t)in[2] | ((uint16_t)in[3] << 8);
-  key2.type = in[4]; key2.mod = in[5];
-  key2.code = (uint16_t)in[6] | ((uint16_t)in[7] << 8);
+void bytesToKeymap(const uint8_t* in, uint16_t len) {
+  for (uint8_t i = 0; i < KEYMAP_KEYS && (uint16_t)(i * 4 + 4) <= len; i++) {
+    keys[i].type = in[i * 4 + 0];
+    keys[i].mod  = in[i * 4 + 1];
+    keys[i].code = (uint16_t)in[i * 4 + 2] | ((uint16_t)in[i * 4 + 3] << 8);
+  }
 }
 void resetKeymapDefaults() {
-  key1.type = KEYMAP_TYPE_KEYBOARD; key1.mod = BUTTON_1_MOD; key1.code = BUTTON_1_CODE;
-  key2.type = KEYMAP_TYPE_KEYBOARD; key2.mod = BUTTON_2_MOD; key2.code = BUTTON_2_CODE;
+  for (uint8_t i = 0; i < KEYMAP_KEYS; i++) keys[i] = defaultKeys[i];
 }
 
-// Persist current mapping to internal flash as [VERSION][8 bytes].
+// Persist current mapping to internal flash as [VERSION][36 bytes].
 void saveKeymap() {
-  uint8_t buf[9];
+  uint8_t buf[1 + KEYMAP_LEN];
   buf[0] = KEYMAP_VERSION;
   keymapToBytes(buf + 1);
   InternalFS.remove(KEYMAP_FILE);                       // truncate / overwrite
@@ -282,14 +347,54 @@ void saveKeymap() {
   }
 }
 
-// Load a saved mapping (if present and version matches), else keep defaults.
+// Load a saved mapping, else keep defaults. Files from older firmware keep
+// their keys; the entries they did not have get their defaults.
 void loadKeymap() {
   Adafruit_LittleFS_Namespace::File f(InternalFS);
   if (!f.open(KEYMAP_FILE, Adafruit_LittleFS_Namespace::FILE_O_READ)) return;
-  uint8_t buf[9];
+  uint8_t buf[1 + KEYMAP_LEN];
   int n = f.read(buf, sizeof(buf));
   f.close();
-  if (n == (int)sizeof(buf) && buf[0] == KEYMAP_VERSION) bytesToKeymap(buf + 1);
+  if (n == 1 + KEYMAP_LEN && buf[0] == KEYMAP_VERSION) bytesToKeymap(buf + 1, KEYMAP_LEN);
+  else if (n == 29 && buf[0] == 3)                     bytesToKeymap(buf + 1, 28);
+  else if (n == 17 && buf[0] == 2)                     bytesToKeymap(buf + 1, 16);
+  else if (n == 9 && buf[0] == 1)                      bytesToKeymap(buf + 1, 8);
+}
+
+// [MOTION_FILE_VERSION][flags]. Version 2 = hold-to-tilt, tilt off by
+// default; an older one-byte file (tilt on, auto-fire) is ignored.
+#define MOTION_FILE_VERSION 2
+void saveMotionFlags() {
+  InternalFS.remove(MOTION_FILE);
+  Adafruit_LittleFS_Namespace::File f(InternalFS);
+  if (f.open(MOTION_FILE, Adafruit_LittleFS_Namespace::FILE_O_WRITE)) {
+    uint8_t buf[2] = { MOTION_FILE_VERSION, motionFlags };
+    f.write(buf, sizeof(buf));
+    f.close();
+  }
+}
+
+void loadMotionFlags() {
+  Adafruit_LittleFS_Namespace::File f(InternalFS);
+  if (!f.open(MOTION_FILE, Adafruit_LittleFS_Namespace::FILE_O_READ)) return;
+  uint8_t buf[2];
+  if (f.read(buf, 2) == 2 && buf[0] == MOTION_FILE_VERSION) motionFlags = buf[1] & MOTION_ALL_BITS;
+  f.close();
+}
+
+void writeMotionCharacteristic() {
+  uint8_t v[2] = { motionFlags, (uint8_t)(motionPresent ? 1 : 0) };
+  motionChr.write(v, sizeof(v));
+}
+
+// Bonded host switched gestures on/off: byte 0 = flags.
+void motion_write_cb(uint16_t conn_hdl, BLECharacteristic* chr, uint8_t* data, uint16_t len) {
+  (void) conn_hdl; (void) chr;
+  if (len < 1) return;
+  motionFlags = data[0] & MOTION_ALL_BITS;
+  motionApply();
+  writeMotionCharacteristic();
+  motionDirty = true;
 }
 
 void setDefaultDeviceName() {
@@ -351,12 +456,12 @@ void writeDeviceNameCharacteristic() {
   nameChr.write(deviceName);
 }
 
-// Bonded host wrote the keymap characteristic (8 bytes): apply + flag for save.
+// Bonded host wrote the keymap characteristic (8 or 16 bytes): apply + flag for save.
 void keymap_write_cb(uint16_t conn_hdl, BLECharacteristic* chr, uint8_t* data, uint16_t len) {
   (void) conn_hdl; (void) chr;
   if (len < 8) return;
-  bytesToKeymap(data);
-  uint8_t b[8]; keymapToBytes(b);
+  bytesToKeymap(data, len);
+  uint8_t b[KEYMAP_LEN]; keymapToBytes(b);
   keymapChr.write(b, sizeof(b));                        // keep readable value in sync
   keymapDirty = true;                                   // flash write deferred to loop()
 }
@@ -379,7 +484,7 @@ void cmd_write_cb(uint16_t conn_hdl, BLECharacteristic* chr, uint8_t* data, uint
   if (len < 1) return;
   if (data[0] == CMD_RESET_DEFAULTS) {
     resetKeymapDefaults();
-    uint8_t b[8]; keymapToBytes(b);
+    uint8_t b[KEYMAP_LEN]; keymapToBytes(b);
     keymapChr.write(b, sizeof(b));
     keymapDirty = true;
   } else if (data[0] == CMD_RESET_NAME) {
@@ -388,6 +493,8 @@ void cmd_write_cb(uint16_t conn_hdl, BLECharacteristic* chr, uint8_t* data, uint
     writeDeviceNameCharacteristic();
     nameDirty = true;
     advRefreshPending = true;
+  } else if (data[0] == CMD_RESET_ALL) {
+    resetAllPending = true;             // flash work and reboot happen in loop()
   }
 }
 
@@ -396,10 +503,10 @@ void setupConfigService() {
 
   keymapChr.setProperties(CHR_PROPS_READ | CHR_PROPS_WRITE | CHR_PROPS_WRITE_WO_RESP);
   keymapChr.setPermission(SECMODE_ENC_NO_MITM, SECMODE_ENC_NO_MITM);
-  keymapChr.setFixedLen(8);
+  keymapChr.setMaxLen(KEYMAP_LEN);
   keymapChr.setWriteCallback(keymap_write_cb);
   keymapChr.begin();
-  uint8_t b[8]; keymapToBytes(b);
+  uint8_t b[KEYMAP_LEN]; keymapToBytes(b);
   keymapChr.write(b, sizeof(b));
 
   nameChr.setProperties(CHR_PROPS_READ | CHR_PROPS_WRITE | CHR_PROPS_WRITE_WO_RESP);
@@ -414,6 +521,13 @@ void setupConfigService() {
   cmdChr.setFixedLen(1);
   cmdChr.setWriteCallback(cmd_write_cb);
   cmdChr.begin();
+
+  motionChr.setProperties(CHR_PROPS_READ | CHR_PROPS_WRITE | CHR_PROPS_WRITE_WO_RESP);
+  motionChr.setPermission(SECMODE_ENC_NO_MITM, SECMODE_ENC_NO_MITM);
+  motionChr.setMaxLen(2);
+  motionChr.setWriteCallback(motion_write_cb);
+  motionChr.begin();
+  writeMotionCharacteristic();
 }
 
 // Is the board powered from USB right now? (VBUS present)
@@ -430,10 +544,16 @@ void sendKey(uint8_t modifier, uint8_t keycode) {
     usb_hid.keyboardRelease(0);
     return;
   }
+  // Every BLE host that subscribed to the keyboard gets the key; a link that
+  // only opened the control app has no HID subscription and ignores it.
   if (Bluefruit.connected()) {
-    blehid.keyboardReport(modifier, keys);
+    for (uint16_t h = 0; h < BLE_MAX_CONNECTION; h++) {
+      if (Bluefruit.connected(h)) blehid.keyboardReport(h, modifier, keys);
+    }
     delay(KEY_TAP_MS);
-    blehid.keyRelease();
+    for (uint16_t h = 0; h < BLE_MAX_CONNECTION; h++) {
+      if (Bluefruit.connected(h)) blehid.keyRelease(h);
+    }
   }
 }
 
@@ -441,9 +561,13 @@ void sendKey(uint8_t modifier, uint8_t keycode) {
 // so media keys require a connected BLE host. Codes: HID_USAGE_CONSUMER_*.
 void sendConsumer(uint16_t usage) {
   if (Bluefruit.connected()) {
-    blehid.consumerKeyPress(usage);
+    for (uint16_t h = 0; h < BLE_MAX_CONNECTION; h++) {
+      if (Bluefruit.connected(h)) blehid.consumerKeyPress(h, usage);
+    }
     delay(KEY_TAP_MS);
-    blehid.consumerKeyRelease();
+    for (uint16_t h = 0; h < BLE_MAX_CONNECTION; h++) {
+      if (Bluefruit.connected(h)) blehid.consumerKeyRelease(h);
+    }
   }
 }
 
@@ -453,7 +577,10 @@ void sendMapping(const KeyMap& k) {
   else                                sendKey(k.mod, (uint8_t)k.code);
 }
 
-bool pollPressed(Button& b) {
+// Prints every debounced button change to the USB serial port (115200), so a
+// button that does nothing can be told apart: no line = wiring/solder, a line
+// but no key = mapping or host.
+bool pollPressed(Button& b, const char* label) {
   bool reading = digitalRead(b.pin);
   if (reading != b.lastRead) {
     b.lastRead = reading;
@@ -461,6 +588,7 @@ bool pollPressed(Button& b) {
   }
   if ((millis() - b.lastEdge) > DEBOUNCE_MS && reading != b.stable) {
     b.stable = reading;
+    if (Serial) Serial.printf("%s %s\n", label, b.stable == LOW ? "pressed" : "released");
     if (b.stable == LOW) return true;
   }
   return false;
@@ -475,18 +603,69 @@ void updateLed(bool active) {
 
 #if ENABLE_BATTERY
 uint16_t readVbatMv() {
-  uint32_t raw = analogRead(PIN_VBAT);                 // divider enabled since boot
-  return (uint16_t)((float)raw * VBAT_MV_PER_LSB * VBAT_DIVIDER);
+  uint32_t raw = 0;                                    // divider enabled since boot
+  for (uint8_t i = 0; i < 8; i++) raw += analogRead(PIN_VBAT);
+  return (uint16_t)((float)raw / 8 * VBAT_MV_PER_LSB * VBAT_DIVIDER);
 }
 
+// LiPo resting voltage -> charge, piecewise linear. A cell spends most of its
+// charge between 3.7 and 3.9 V, so a straight 3.3..4.2 V line would sit high
+// for hours and then drop fast at the end.
 uint8_t vbatPercent(uint16_t mv) {
-  if (mv >= 4200) return 100;
-  if (mv <= 3300) return 0;
-  return (uint8_t)(((uint32_t)(mv - 3300) * 100) / (4200 - 3300));
+  static const uint16_t curve[][2] = {
+    { 4200, 100 }, { 4100, 90 }, { 4000, 79 }, { 3900, 66 }, { 3850, 57 },
+    { 3800, 47 },  { 3750, 37 }, { 3700, 27 }, { 3650, 17 }, { 3600, 10 },
+    { 3500, 5 },   { 3400, 2 },  { 3300, 0 },
+  };
+  const uint8_t n = sizeof(curve) / sizeof(curve[0]);
+  if (mv >= curve[0][0]) return 100;
+  for (uint8_t i = 1; i < n; i++) {
+    if (mv >= curve[i][0]) {
+      uint16_t v0 = curve[i][0], v1 = curve[i - 1][0];
+      uint16_t p0 = curve[i][1], p1 = curve[i - 1][1];
+      return (uint8_t)(p0 + (uint32_t)(mv - v0) * (p1 - p0) / (v1 - v0));
+    }
+  }
+  return 0;
+}
+
+// Last level sent, so a little noise does not make the percentage jump about.
+uint8_t batLevel = 0;
+bool    batKnown = false;
+
+// The BQ25101 charge pin (~CHG, P0.17): LOW while a battery is charging.
+static inline bool charging() {
+  return digitalRead(PIN_CHG_STATUS) == LOW;
+}
+
+// While USB is plugged in the divider reads the charger's output, not the cell,
+// and it sags or rises with the charge current, so the percentage would wander.
+// On USB the level is only allowed to go up (charging), never down; on battery
+// it follows the cell, but a step up of more than a few percent (noise right
+// after unplugging) is ignored.
+void reportBattery(uint16_t mv) {
+  uint8_t p = vbatPercent(mv);
+  bool onUsb = usbPowered();
+  if (batKnown) {
+    if (onUsb && p < batLevel) return;                   // charger noise, not a real drop
+    if (!onUsb && p > batLevel && p - batLevel < 5) return;
+    if (p == batLevel || p + 1 == batLevel || p == batLevel + 1) return;
+  }
+  batLevel = p;
+  batKnown = true;
+  // write() only changes the stored value; a host that already read it (macOS
+  // keeps showing that) needs a notification to see the new level.
+  blebas.write(p);
+  for (uint16_t h = 0; h < BLE_MAX_CONNECTION; h++) {
+    if (Bluefruit.connected(h)) blebas.notify(h, p);
+  }
+  if (Serial) Serial.printf("battery %u mV = %u%% (%s%s)\n", mv, p,
+                            onUsb ? "USB" : "battery", charging() ? ", charging" : "");
 }
 #endif
 
-// Lowest-power state. Only reached on battery. Wake = button press = reset.
+// Lowest-power state. Only reached on battery. Wake = button press (or, on a
+// Sense with lift-to-wake on, picking it up) = reset.
 void enterDeepSleep() {
   setRGB(false, false, false);
 
@@ -504,8 +683,14 @@ void enterDeepSleep() {
   flash.end();
 #endif
 
-  pinMode(BUTTON_1_PIN, INPUT_PULLUP_SENSE);   // arm buttons as wake sources
-  pinMode(BUTTON_2_PIN, INPUT_PULLUP_SENSE);
+  // Arm the buttons as wake sources. A button already held LOW (stuck,
+  // pressed by the case, or a solder bridge) would wake the chip at once and
+  // drain the battery in a reset loop, so it is left out.
+  const uint8_t wakePins[] = { BUTTON_1_PIN, BUTTON_2_PIN, BUTTON_L1_PIN, BUTTON_R1_PIN };
+  for (uint8_t pin : wakePins) {
+    if (digitalRead(pin) == HIGH) pinMode(pin, INPUT_PULLUP_SENSE);
+  }
+  motionPrepareSleep();                   // Sense: movement wakes it too
 
   sd_power_system_off();                  // never returns
   while (true) { }
@@ -520,6 +705,11 @@ void startAdv() {
   Bluefruit.Advertising.addService(blehid);
   Bluefruit.Advertising.addName();
 
+  // The config service in the scan response lets the control app list only
+  // Clawds, and find one that the computer already holds as a keyboard.
+  Bluefruit.ScanResponse.clearData();
+  Bluefruit.ScanResponse.addService(cfgSvc);
+
   Bluefruit.Advertising.restartOnDisconnect(true);
   Bluefruit.Advertising.setInterval(32, 244);
   Bluefruit.Advertising.setFastTimeout(30);
@@ -529,9 +719,16 @@ void startAdv() {
 
 // ----------------------------- BLE callbacks --------------------------------
 
+// Keep advertising while a link is free, so the control app (or a second
+// computer) finds the keyboard without "Forget"-ing it on the first host.
 void connect_callback(uint16_t conn_handle) {
   (void) conn_handle;
   lastActivity = millis();
+#if ENABLE_BATTERY
+  batKnown = false;                     // resend the level (as a notification) soon
+  lastBat = millis() - BATTERY_PERIOD_MS + 3000;
+#endif
+  if (Bluefruit.Periph.connected() < BLE_LINKS) Bluefruit.Advertising.start(0);
 }
 
 void disconnect_callback(uint16_t conn_handle, uint8_t reason) {
@@ -573,6 +770,62 @@ void pair_complete_callback(uint16_t conn_handle, uint8_t auth_status) {
 }
 
 // Hold BOTH buttons at boot for BOND_RESET_HOLD_MS to wipe all stored bonds.
+// Print what is saved in flash and in use (serial monitor, 115200).
+void printSettings() {
+  if (!Serial) return;
+  static const char* names[KEYMAP_KEYS] = {
+    "B1", "B2", "L1", "R1", "TAP", "TILT left", "TILT right", "TILT fwd", "TILT back",
+  };
+  Serial.println("---- settings ----");
+  Serial.printf("name: %s\n", deviceName);
+  for (uint8_t i = 0; i < KEYMAP_KEYS; i++) {
+    const KeyMap& k = keys[i];
+    bool isDefault = k.type == defaultKeys[i].type && k.mod == defaultKeys[i].mod && k.code == defaultKeys[i].code;
+    Serial.printf("%-10s %s mod=0x%02X code=0x%02X%s\n", names[i],
+                  k.type == KEYMAP_TYPE_CONSUMER ? "media   " : "keyboard",
+                  k.mod, k.code, isDefault ? "" : "  (changed)");
+  }
+  Serial.printf("motion sensor: %s, wake=%d tap=%d tilt L/R=%d tilt F/B=%d\n",
+                motionPresent ? "found" : "none",
+                !!(motionFlags & MOTION_WAKE_BIT), !!(motionFlags & MOTION_TAP_BIT),
+                !!(motionFlags & MOTION_TILT_BIT), !!(motionFlags & MOTION_PITCH_BIT));
+  Serial.println("send 's' to print this again, 'R' to wipe settings (keeps bonds)");
+  Serial.println("------------------");
+}
+
+// Factory settings: delete the keymap, name and gesture files and go back to
+// the compiled defaults. Bluetooth bonds are kept (B1 + B2 at boot wipes those).
+void resetAllSettings() {
+  InternalFS.remove(KEYMAP_FILE);
+  InternalFS.remove(NAME_FILE);
+  InternalFS.remove(MOTION_FILE);
+  resetKeymapDefaults();
+  setDefaultDeviceName();
+  motionFlags = MOTION_WAKE_BIT | MOTION_TAP_BIT;
+  if (Serial) Serial.println("settings wiped: defaults restored, rebooting");
+  delay(100);
+  NVIC_SystemReset();                   // reboot so name, USB and BLE start clean
+}
+
+// Hold L1 + R1 at boot for SETTINGS_RESET_HOLD_MS to wipe the saved settings
+// (key mapping, name, gestures). Blue while holding, 3 blue blinks = done.
+void maybeResetSettings() {
+  if (digitalRead(BUTTON_L1_PIN) != LOW || digitalRead(BUTTON_R1_PIN) != LOW) return;
+  uint32_t t = millis();
+  while (digitalRead(BUTTON_L1_PIN) == LOW && digitalRead(BUTTON_R1_PIN) == LOW) {
+    setRGB(false, false, true);
+    if ((millis() - t) >= SETTINGS_RESET_HOLD_MS) {
+      for (int i = 0; i < 3; i++) {
+        setRGB(false, false, true); delay(120);
+        setRGB(false, false, false); delay(120);
+      }
+      resetAllSettings();               // reboots
+    }
+    delay(20);
+  }
+  setRGB(false, false, false);
+}
+
 void maybeResetBonds() {
   if (digitalRead(BUTTON_1_PIN) != LOW || digitalRead(BUTTON_2_PIN) != LOW) return;
   uint32_t t = millis();
@@ -617,6 +870,8 @@ void setup() {
 
   pinMode(BUTTON_1_PIN, INPUT_PULLUP);
   pinMode(BUTTON_2_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_L1_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_R1_PIN, INPUT_PULLUP);
   pinMode(LED_RED,   OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
   pinMode(LED_BLUE,  OUTPUT);
@@ -625,23 +880,35 @@ void setup() {
   pinMode(LED_USER_PIN, OUTPUT);          // BLE-controlled external LED
   applyUserLed(LED_USER_DEFAULT);
 
-  // Charge current select (50 mA default, 100 mA if CHARGE_100MA).
-  pinMode(PIN_CHARGING_CURRENT, OUTPUT);
-  digitalWrite(PIN_CHARGING_CURRENT, CHARGE_100MA ? LOW : HIGH);
+  // Charge current select. Seeed: 50 mA = P0.13 high impedance (input, no
+  // pull), 100 mA = output LOW. Driving it HIGH is not one of the two.
+  if (CHARGE_100MA) {
+    pinMode(PIN_CHARGING_CURRENT, OUTPUT);
+    digitalWrite(PIN_CHARGING_CURRENT, LOW);
+  } else {
+    pinMode(PIN_CHARGING_CURRENT, INPUT);
+  }
 
 #if ENABLE_BATTERY
   // Keep the battery-sense divider enabled (P0.14 LOW) and configure the ADC.
   pinMode(VBAT_ENABLE, OUTPUT);
   digitalWrite(VBAT_ENABLE, LOW);
+  pinMode(PIN_CHG_STATUS, INPUT_PULLUP);  // open-drain charge status
   analogReference(AR_DEFAULT);          // 3.6 V full scale
   analogReadResolution(12);
 #endif
 
   // Load any saved key mapping from internal flash (keeps compiled defaults if none).
+  resetKeymapDefaults();
   loadKeymap();
+  loadMotionFlags();
+  motionBegin();                          // Sense only; false and harmless elsewhere
 
   // BLE is always available (primary, or fallback when USB is unplugged).
-  Bluefruit.begin();
+  // A larger MTU (128) lets the 36-byte keymap go in one write instead of a
+  // split long write.
+  Bluefruit.configPrphBandwidth(BANDWIDTH_HIGH);
+  Bluefruit.begin(BLE_LINKS, 0);
   Bluefruit.setTxPower(4);
   Bluefruit.setName(deviceName);
   Bluefruit.autoConnLed(false);
@@ -654,8 +921,10 @@ void setup() {
   Bluefruit.Security.setPairPasskeyCallback(pair_confirm_callback);  // also enables MITM
   Bluefruit.Security.setPairCompleteCallback(pair_complete_callback);
 
-  // Boot-time gesture: hold BOTH buttons ~5 s to wipe all stored bonds.
+  // Boot-time gestures: hold B1 + B2 ~5 s to wipe all stored bonds; hold
+  // L1 + R1 ~5 s to wipe the saved settings (key mapping, name, gestures).
   maybeResetBonds();
+  maybeResetSettings();
 
   bledis.setManufacturer("Seeed Studio");
   bledis.setModel("XIAO nRF52840");
@@ -664,7 +933,7 @@ void setup() {
   blehid.begin();
 #if ENABLE_BATTERY
   blebas.begin();
-  blebas.write(100);
+  reportBattery(readVbatMv());          // real level from the start, not a fixed 100%
 #endif
 
   setupLedService();                      // custom BLE-controlled LED service
@@ -683,24 +952,91 @@ void loop() {
   bool active   = usbReady || bleReady;
   bool onUsbPwr = usbPowered();
 
-  bool p1 = pollPressed(btn1);
-  bool p2 = pollPressed(btn2);
+  bool pressed[KEYMAP_KEYS] = {
+    pollPressed(btn1, "B1"), pollPressed(btn2, "B2"),
+    pollPressed(btnL1, "L1"), pollPressed(btnR1, "R1"),
+    false, false, false, false, false,
+  };
+  // On a Sense with tilt on, holding L1 + R1 together turns on tilt: while
+  // both are held, leaning Clawd sends the arrow keys (see motion.h) and the
+  // shoulders send nothing themselves. To tell the chord from a single press,
+  // L1/R1 keys go out SHOULDER_CHORD_MS late (only when tilt is on).
+  static bool l1Pending = false, r1Pending = false, chord = false;
+  static uint32_t l1At = 0, r1At = 0;
+  bool tiltOn = motionPresent && (motionFlags & (MOTION_TILT_BIT | MOTION_PITCH_BIT));
+  bool l1Down = btnL1.stable == LOW, r1Down = btnR1.stable == LOW;
+  if (tiltOn) {
+    if (pressed[2]) { l1Pending = true; l1At = now; pressed[2] = false; }
+    if (pressed[3]) { r1Pending = true; r1At = now; pressed[3] = false; }
+    if (l1Down && r1Down && (l1Pending || r1Pending || chord)) {
+      if (!chord) {
+        chord = true;
+        if (Serial) Serial.println("L1+R1 held: tilt on");
+      }
+      l1Pending = r1Pending = false;
+    } else if (chord && !l1Down && !r1Down) {
+      chord = false;                    // both released: tilt off, no key sent
+      if (Serial) Serial.println("tilt off");
+    } else if (!chord) {
+      if (l1Pending && now - l1At > SHOULDER_CHORD_MS) { l1Pending = false; pressed[2] = true; }
+      if (r1Pending && now - r1At > SHOULDER_CHORD_MS) { r1Pending = false; pressed[3] = true; }
+    }
+    if (chord) lastActivity = now;      // do not sleep while tilting
+  } else {
+    chord = false;
+  }
+  motionTiltHeld = chord;
+  switch (motionPoll((bool)Serial)) {
+    case MOTION_DOUBLE_TAP: pressed[KEY_TAP] = true;        if (Serial) Serial.println("TAP double"); break;
+    case MOTION_TILT_LEFT:  pressed[KEY_TILT_LEFT] = true;  if (Serial) Serial.println("TILT left");  break;
+    case MOTION_TILT_RIGHT: pressed[KEY_TILT_RIGHT] = true; if (Serial) Serial.println("TILT right"); break;
+    case MOTION_TILT_FORWARD: pressed[KEY_TILT_FWD] = true; if (Serial) Serial.println("TILT forward"); break;
+    case MOTION_TILT_BACK:  pressed[KEY_TILT_BACK] = true;  if (Serial) Serial.println("TILT back");  break;
+    default: break;
+  }
 
   if (active) {
-    if (p1) { sendMapping(key1); ledFlashUntil = now + LED_FLASH_MS; lastActivity = now; }
-    if (p2) { sendMapping(key2); ledFlashUntil = now + LED_FLASH_MS; lastActivity = now; }
+    for (uint8_t i = 0; i < KEYMAP_KEYS; i++) {
+      if (!pressed[i]) continue;
+      sendMapping(keys[i]);
+      ledFlashUntil = now + LED_FLASH_MS;
+      lastActivity = now;
+    }
   }
 
   // Persist changed settings outside BLE callbacks (flash writes are blocking).
+  if (resetAllPending) resetAllSettings();
+  // Serial commands: 's' prints the saved settings, 'R' wipes them.
+  // The settings are also printed once, a few seconds after the monitor opens.
+  static bool printedSettings = false;
+  if (Serial) {
+    static uint32_t serialSince = 0;
+    if (!serialSince) serialSince = now;
+    if (!printedSettings && now - serialSince > 2000) { printedSettings = true; printSettings(); }
+    while (Serial.available()) {
+      int c = Serial.read();
+      if (c == 's') printSettings();
+      else if (c == 'R') resetAllSettings();
+    }
+  } else {
+    printedSettings = false;
+  }
   if (keymapDirty) { keymapDirty = false; saveKeymap(); }
+  if (motionDirty) { motionDirty = false; saveMotionFlags(); }
   if (nameDirty) { nameDirty = false; saveDeviceName(); }
   if (advRefreshPending && !Bluefruit.connected()) { advRefreshPending = false; startAdv(); }
+  // The library only restarts advertising when the last link drops; reopen
+  // the free slot when one of two links goes away.
+  uint8_t links = Bluefruit.Periph.connected();
+  if (links > 0 && links < BLE_LINKS && !Bluefruit.Advertising.isRunning()) {
+    Bluefruit.Advertising.start(0);
+  }
 
 #if ENABLE_BATTERY
   if (now - lastBat > BATTERY_PERIOD_MS) {
     lastBat = now;
     uint16_t mv = readVbatMv();
-    blebas.write(vbatPercent(mv));
+    reportBattery(mv);
     // Protect the cell: cut off only on battery, ignore implausibly low reads.
     if (!onUsbPwr && mv > 2000 && mv < VBAT_CUTOFF_MV) enterDeepSleep();
   }
@@ -715,6 +1051,40 @@ void loop() {
     } else {
       if ((now - advStart) > (uint32_t)ADV_TIMEOUT_S * 1000UL) enterDeepSleep();
     }
+  }
+
+  // Raw pin levels every 2 s on the serial port (1 = released, 0 = pressed or
+  // shorted to GND). A pin stuck at 0 without a press is a solder bridge.
+  static uint32_t lastRaw = 0, lastPower = 0;
+#if ENABLE_BATTERY
+  // Power line every 10 s on the serial port: what the battery path reads.
+  if (Serial && now - lastPower > 10000) {
+    lastPower = now;
+    uint16_t mv = readVbatMv();
+    Serial.printf("power %s, charger %s, VBAT %u mV (%u%%), sent %u%%\n",
+                  usbPowered() ? "USB" : "battery",
+                  charging() ? "CHARGING" : "idle/full/no battery",
+                  mv, vbatPercent(mv), batLevel);
+  }
+#endif
+  if (Serial && now - lastRaw > 2000) {
+    lastRaw = now;
+    Serial.printf("raw B1=%d B2=%d L1=%d R1=%d\n",
+                  digitalRead(BUTTON_1_PIN), digitalRead(BUTTON_2_PIN),
+                  digitalRead(BUTTON_L1_PIN), digitalRead(BUTTON_R1_PIN));
+#ifdef DIAG_ANALOG
+    // TEMP diagnosis: voltage on D4/D5 against the internal ~13k pull-up.
+    // ~0 mV = hard short to GND, 300..2500 mV = leak (flux, partial bridge).
+    analogReference(AR_DEFAULT);
+    analogReadResolution(12);
+    uint32_t a4 = analogRead(A4), a5 = analogRead(A5), a0 = analogRead(A0);
+    pinMode(BUTTON_L1_PIN, INPUT_PULLUP);
+    pinMode(BUTTON_R1_PIN, INPUT_PULLUP);
+    pinMode(BUTTON_1_PIN, INPUT_PULLUP);
+    Serial.printf("mV D0=%lu D4=%lu D5=%lu\n",
+                  (unsigned long)(a0 * 3600 / 4096), (unsigned long)(a4 * 3600 / 4096),
+                  (unsigned long)(a5 * 3600 / 4096));
+#endif
   }
 
   updateLed(active);

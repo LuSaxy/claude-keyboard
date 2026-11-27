@@ -8,7 +8,7 @@ pageClass: clawd-app-page
 
 A small **Web Bluetooth** control panel for Clawd — runs right here in the
 browser, no install. After pairing with **clawd**, it can set the external LED
-brightness, remap Button 1 and Button 2 (keyboard or media keys), change the
+brightness, remap Button 1, Button 2 and the L1 / R1 shoulder buttons (keyboard or media keys), change the
 BLE/USB device name, and reset the keymap or name to firmware defaults.
 
 ::: info Requirements
