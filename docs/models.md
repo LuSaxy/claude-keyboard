@@ -13,6 +13,11 @@ switch soldering (SW3/SW4 orientation, bridges under the body) need review. Clea
 
 ## What V2 looks like
 
+Drag to turn it, scroll to zoom, and press **Take apart** to see the parts.
+Hover a part for its name.
+
+<Clawd3D />
+
 Renders from the Ket model (the same geometry as the downloads below).
 
 <div class="clawd-gallery">

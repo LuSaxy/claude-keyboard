@@ -12,6 +12,7 @@
     "preview": "vitepress preview"
   },
   "devDependencies": {
+    "three": "^0.187.0",
     "vitepress": "^1.6.3",
     "vue": "^3.5.13"
   }

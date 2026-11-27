@@ -43,7 +43,7 @@ async function copyModels() {
       await mkdir(path.dirname(dest), { recursive: true });
       await cp(src, dest);
       // Renders are shown on the Models page, not listed as downloads.
-      if (!name.startsWith("v2/images/")) files.push({ name, size: info.size });
+      if (!name.startsWith("v2/images/") && !name.startsWith("v2/web/")) files.push({ name, size: info.size });
     }
   }
   await walk();
@@ -74,7 +74,9 @@ async function generateReadmePage() {
     .replaceAll("](program/xiao_ble_keyboard/README.md)", "](/firmware)")
     .replaceAll("](docs/app/README.md)", "](/app)")
     .replaceAll("](app/README.md)", "](/app)")
-    .replaceAll("](models/", "](/models/");
+    .replaceAll("](models/", "](/models/")
+    // The V2 render at the top becomes the interactive 3D view on the site.
+    .replace("![Clawd V2 render](/models/v2/images/v2-back.webp)", "<Clawd3D />");
   const page = frontmatter({ title: "Project README" }) + md;
   await writeFile(path.join(docsDir, "readme.md"), page);
 }

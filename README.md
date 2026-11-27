@@ -2,7 +2,7 @@
 
 ![Clawd V2 render](models/v2/images/v2-back.webp)
 
-> The image above is a render of the **V2** model. The latest **V2 prototype** is
+> The image above is a render of the **V2** model (an interactive 3D view on the [site](https://lusaxy.github.io/claude-keyboard/readme)). The latest **V2 prototype** is
 > in [`models/v2/`](models/v2/README.md): editable Ket source, printable STLs
 > (with the battery plate and a small-LiPo variant), two-material 3MFs, assembly
 > STEP, Gerbers and BOM/CPL. It is **not production-approved**; slide-switch
