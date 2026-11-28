@@ -20,6 +20,28 @@ const root = path.resolve(docsDir, ".."); // repository root
 const modelsSrc = path.join(root, "models");
 const publicModels = path.join(docsDir, "public", "models");
 
+// Drop the level-2 sections with these titles (and their subsections) from a
+// markdown page: repo-only material that has its own page on the site.
+function dropSections(md, titles) {
+  const lines = md.split("\n");
+  const out = [];
+  let skipping = false;
+  let fence = false;
+  for (const line of lines) {
+    if (line.startsWith("```")) fence = !fence;
+    if (!fence && line.startsWith("## ")) skipping = titles.includes(line.slice(3).trim());
+    if (!skipping) out.push(line);
+  }
+  return out.join("\n");
+}
+
+// Replace the first "# ..." heading (and anything before it) with a site title.
+function retitle(md, title) {
+  const i = md.search(/^# /m);
+  const rest = i < 0 ? md : md.slice(md.indexOf("\n", i) + 1);
+  return `# ${title}\n${rest}`;
+}
+
 function frontmatter(fields) {
   const body = Object.entries(fields)
     .map(([key, value]) => `${key}: ${value}`)
@@ -61,7 +83,21 @@ async function generateFirmwarePage() {
     path.join(root, "program", "xiao_ble_keyboard", "README.md"),
     "utf8",
   );
-  const page = frontmatter({ title: "Firmware docs", outline: "deep" }) + md;
+  // The README opens with a support table and its own GitHub title; the
+  // site page gets a plain title, and the battery section points at the
+  // parts page, which has the full guide.
+  let body = retitle(md, "Firmware reference");
+  body = body.replace(
+    /^## Battery\n/m,
+    "## Battery\n\n::: tip Choosing, polarity, charging\nThe battery guide for builders (choosing a cell, polarity, the charger check, troubleshooting) is on the [parts page](/bom#battery). This section is the firmware side.\n:::\n",
+  );
+  // Long platform-specific blocks fold away.
+  body = body
+    .replace(/^### Manual \/ two-step upload[^\n]*\n([\s\S]*?)(?=^### )/m, (m, inner) =>
+      `### Manual / two-step upload (WSL, USB-IP, or when auto-reset fails)\n\n::: details Show the manual upload steps\n${inner.trim()}\n:::\n\n`)
+    .replace(/^## USB in WSL\n([\s\S]*)$/m, (m, inner) =>
+      `## USB in WSL\n\n::: details Show the usbipd steps\n${inner.trim()}\n:::\n`);
+  const page = frontmatter({ title: "Firmware reference", outline: "[2, 3]" }) + body;
   await writeFile(path.join(docsDir, "firmware.md"), page);
 }
 
@@ -75,9 +111,22 @@ async function generateReadmePage() {
     .replaceAll("](docs/app/README.md)", "](/app)")
     .replaceAll("](app/README.md)", "](/app)")
     .replaceAll("](models/", "](/models/")
+    .replaceAll("](docs/bom.md)", "](/bom)")
     // The V2 render at the top becomes the interactive 3D view on the site.
     .replace("![Clawd V2 render](/models/v2/images/v2-back.webp)", "<Clawd3D />");
-  const page = frontmatter({ title: "Project README" }) + md;
+  // The site has its own pages for these; the repo README keeps them.
+  md = dropSections(md, ["Repository", "Git LFS", "Firmware", "Control App"]);
+  md = retitle(md, "Overview")
+    // The live-site line and the "in docs/bom.md (on the site: ...)" aside
+    // only make sense on GitHub.
+    .replace(/^\*\*Live site:\*\*[\s\S]*?\n\n/m, "")
+    .replace("[`docs/bom.md`](/bom) (on the site: **Parts list (BOM)**)", "the [parts list](/bom)")
+    .replace("review\n> [`models/v2/`](/v2) before", "review\n> [V2 hardware](/v2) before");
+  md = md.replace(
+    /^## Highlights/m,
+    "::: tip Where to go\n**Build one:** the [build guide](/setup), step by step. **Already have one:** the [control app](/app).\n:::\n\n## Highlights",
+  );
+  const page = frontmatter({ title: "Overview" }) + md;
   await writeFile(path.join(docsDir, "readme.md"), page);
 }
 
@@ -85,5 +134,5 @@ const files = await copyModels();
 await generateFirmwarePage();
 await generateReadmePage();
 const v2 = await readFile(path.join(modelsSrc, "v2", "README.md"), "utf8");
-await writeFile(path.join(docsDir, "v2.md"), frontmatter({ title: "V2 prototype", outline: "deep" }) + v2.replaceAll("](../LICENSE)", "](https://github.com/LuSaxy/claude-keyboard/blob/main/models/LICENSE)"));
+await writeFile(path.join(docsDir, "v2.md"), frontmatter({ title: "V2 hardware & manufacturing", outline: "[2, 3]" }) + retitle(v2, "V2 hardware & manufacturing").replaceAll("](../LICENSE)", "](https://github.com/LuSaxy/claude-keyboard/blob/main/models/LICENSE)"));
 console.log(`prepared: ${files.length} model file(s), firmware.md, readme.md`);

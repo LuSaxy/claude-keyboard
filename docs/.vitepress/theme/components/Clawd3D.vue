@@ -231,8 +231,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="clawd3d" :class="{ compact: props.compact }">
-    <div ref="host" class="stage" />
+  <figure class="clawd3d" :class="{ compact: props.compact }">
+    <div
+      ref="host"
+      class="stage"
+      role="img"
+      aria-label="3D model of Clawd V2: an orange case with two black keycaps, two clear eyes and side arms. Drag to turn it."
+    />
     <img v-if="failed" class="fallback" :src="withBase('/models/v2/images/v2-back.webp')" alt="Clawd V2 render" />
     <div v-if="loading" class="status">Loading 3D model…</div>
     <div v-if="hovered" class="label">{{ hovered }}</div>
@@ -240,18 +245,30 @@ onBeforeUnmount(() => {
       <button v-if="!props.compact" type="button" class="btn primary" @click="toggleExplode">
         {{ explode > 0.5 ? "Assemble" : "Take apart" }}
       </button>
-      <input v-model.number="explode" class="slider" type="range" min="0" max="1" step="0.01" aria-label="Explode" />
+      <input
+        v-model.number="explode"
+        class="slider"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        aria-label="Take apart: slide to separate the parts"
+        :aria-valuetext="explode > 0.5 ? 'apart' : 'assembled'"
+        title="Slide to take Clawd apart"
+      />
       <template v-if="!props.compact">
         <label class="chk"><input v-model="spin" type="checkbox" /> Spin</label>
         <label class="chk"><input v-model="edges" type="checkbox" /> Edges</label>
       </template>
     </div>
-  </div>
+  </figure>
 </template>
 
 <style scoped>
 .clawd3d {
   position: relative;
+  box-sizing: border-box;
+  padding: 0;
   width: 100%;
   height: 480px;
   border-radius: 14px;

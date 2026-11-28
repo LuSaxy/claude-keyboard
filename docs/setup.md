@@ -1,179 +1,197 @@
 ---
-title: Setup guide
-outline: deep
+title: Build guide
+outline: [2, 3]
 ---
 
-# Setup guide
+# Build guide
 
-From a bare board to a working Clawd in six steps: print the case, wire the
-XIAO nRF52840, assemble it, flash the firmware, pair over Bluetooth, and map the
-buttons. Set aside an afternoon — most of the time is printing.
+From parts to a working Clawd V2: order the board, print the case, solder,
+test, flash, close it up and pair. Plan a few evenings: the PCB takes a week or
+two to arrive, the print takes a few hours, the soldering about an hour.
 
-## 1 - What you'll need
+::: info Status
+V2 is a prototype. The rev A boards have been built and type over USB and
+Bluetooth. Not yet verified: the slide-switch knobs reaching through the case,
+and the antenna keepout. Fine for building your own; the open points are on
+[V2 hardware](/v2#required-review-before-fabrication).
+:::
 
-The full parts list with LCSC numbers, links and prices is on the
-**[Parts list (BOM)](/bom)** page. In short:
+## 1. Get the files
 
-- **Seeed Studio XIAO nRF52840 Sense** (or the plain XIAO nRF52840). **Not the
-  Plus / Sense Plus**: its extra pads bridge the board's pads when soldered.
-- The Clawd V2 PCB with its parts: two Kailh hot-swap sockets, two slide
-  switches (MODE, POWER), two side-push switches (L1, R1), two yellow LEDs with
-  330 Ω resistors, and a JST PH 2.0 battery socket.
-- A **protected 1S LiPo** with a JST PH 2.0 plug, up to 40 × 35 × 5 mm.
-  **Check its polarity before plugging it in** (see [Battery](/bom#battery)).
-- Two MX switches and two 1u keycaps.
-- The printed case and a USB-C cable that carries **data**.
+Everything (print files, Gerbers, firmware, self-test) is in the repository:
 
-## 2 - Print the case
+```sh
+git clone https://github.com/LuSaxy/claude-keyboard.git
+cd claude-keyboard
+git lfs pull   # the model and PCB files are stored in Git LFS
+```
 
-Download the V2 print files from the [Models page](/models) and slice them for
-your printer. The 3MF files hold several bodies (one per filament).
+No git? [Download the ZIP](https://github.com/LuSaxy/claude-keyboard/archive/refs/heads/main.zip)
+for the code, and take the print and PCB files from
+[Print files & models](/models).
+
+## 2. Order the parts and the board
+
+The full list with LCSC numbers and links is the [parts list](/bom). The short
+version:
+
+| Part | Note |
+| --- | --- |
+| XIAO nRF52840 **Sense** (or plain) | **Not the Plus / Sense Plus**: its extra pads short to the board's pads. The Sense adds the motion gestures. |
+| Clawd V2 PCB | Upload `models/v2/pcb/clawd-v2-gerber.zip` (rev A) at [JLCPCB](https://jlcpcb.com/quote): 2 layers, 1.6 mm. Other settings are your choice. |
+| Board parts | 2 Kailh MX hot-swap sockets, 2 slide switches (MODE, POWER), 2 side-push switches (L1, R1), 2 yellow 0805 LEDs, 2 × 330 Ω 0603, 1 JST PH 2.0 socket. |
+| LiPo | 1S, **protected**, JST PH 2.0 plug, up to 40 × 35 × 5 mm (or 30 × 37 × 4 mm with the small-LiPo print files). |
+| Keys | 2 MX switches, 2 × 1u keycaps. |
+| Cable | USB-C with **data** lines: charge-only cables cannot flash the board. |
+
+::: tip Board assembly
+You can let the fab place the small top-side parts from the BOM/CPL in
+`clawd-v2-jlcpcb-prototype.zip`. Check that they can place the XIAO module; if
+not, solder it by hand. Review the placement preview before paying.
+:::
+
+## 3. Print the case
 
 | Part | File | Filament |
 | --- | --- | --- |
-| Top shell + eye covers | `3mf/clawd-v2-top-print.3mf` | Orange shell, clear/yellow translucent eyes (two materials) |
-| Bottom shell + USB bezel | `3mf/clawd-v2-bottom-print.3mf` | Orange shell, clear bezel (two materials) |
+| Top shell + eye covers | `3mf/clawd-v2-top-print.3mf` | Orange shell, clear or yellow translucent eyes |
+| Bottom shell + USB bezel | `3mf/clawd-v2-bottom-print.3mf` | Orange shell, clear bezel |
 | Battery plate | `3mf/clawd-v2-battery-plate.3mf` | Any, one colour |
 
-Single-material printer: use the STLs in `stl/` instead and glue the clear
-parts in after a dry fit. For a 30 × 37 × 4 mm LiPo use the `-small-lipo`
-bottom shell and battery plate.
+- PLA or PETG, about 0.2 mm layers, 15–20 % infill.
+- **Top shell** upside down. Keep supports out of the slits around the L1/R1
+  paddles; clean them with a knife if they fused.
+- **Battery plate** flat, posts up.
+- One-material printer: print the STLs from `stl/` and glue the clear parts in
+  after a dry fit (sand them slightly; they are drawn with zero clearance).
+- Small LiPo (30 × 37 × 4 mm): use the `-small-lipo` bottom shell and plate.
 
-- PLA or PETG; ~0.2 mm layers, 15–20 % infill.
-- **Battery plate:** flat, the two socket-support posts up.
-- The L1/R1 shoulder buttons are flexible paddles in the shells: no separate
-  parts to print.
-- Dry-fit the PCB, battery and plate before soldering anything permanent.
+The L1/R1 shoulder buttons are flexible paddles in the shells, not separate
+parts. Print both shells from the same revision; do not mix with V1 parts.
 
-The editable source is `clawd-v2.ket` (open it in Ket). The V1 FreeCAD/3MF files
-are still on the Models page for reference; do not mix V1 and V2 parts.
+## 4. Set up the firmware tools
 
-## 3 - Wire the electronics
-
-Buttons and the MODE switch sit between a GPIO and **GND**; the firmware uses
-internal pull-ups, so open = HIGH and pressed/closed = LOW. Every ground returns
-to the right-side `GND` pin.
-
-| From | To | Notes |
-| --- | --- | --- |
-| `D0` | Button 1 (left key) → `GND` | Sends Escape by default |
-| `D1` | Button 2 (right key) → `GND` | Sends Enter by default |
-| `D4` | L1 shoulder → `GND` | V2 board (SW3) · Shift+Tab by default |
-| `D5` | R1 shoulder → `GND` | V2 board (SW4) · Tab by default |
-| `D2` | MODE switch → `GND` | To GND = USB-HID · open = BLE only |
-| `D3` | 330 Ω (300–390 Ω) → LED anode, cathode → `GND` | Active HIGH · one resistor **per** LED (parallel) |
-| `BAT+` | ON/OFF switch → LiPo + | Switch cuts the cell when OFF |
-| `BAT−` | LiPo − | Underside solder pad |
-| USB-C | Power + charge | Automatic — runs the board and charges the cell |
-
-::: danger Check the battery polarity first
-JST PH plugs are not wired the same by every seller, and the board has **no
-reverse-polarity protection**. A reversed cell gets hot and can damage the
-XIAO's charger. On the V2 board, J1 **pin 1 (+)** is the pad next to the small
-silkscreen circle. Plug the cell in with POWER off and measure: you must read
-**+3.6 to +4.2 V** on that pad against GND. Details on the
-[Battery](/bom#battery) page.
-:::
-
-::: tip LEDs
-Never put them in series (2× their forward voltage exceeds the 3.3 V rail). One
-LED is fine — just drop a branch. Both LEDs share `D3`, so one BLE command drives
-them together.
-:::
-
-Full pinout, chip-pin map, and battery-sense details are in the
-[firmware wiring docs](/firmware#hardware--wiring).
-
-## 4 - Assemble it
-
-- Seat the XIAO in the bottom shell with the USB-C port lined up to the opening.
-- Mount the two buttons through the top shell's key holes and the MODE / ON-OFF
-  switches in their slots.
-- Check the battery plug polarity (see above), then lay the LiPo in its cradle
-  and drop the battery plate on top; run the leads along the left wall into
-  the J1 pocket.
-- Run the solder self-test (`make selftest`) and fix anything it reports.
-- Power-on test **before** closing: plug in USB-C and confirm a short blue LED
-  pulse (advertising). With POWER on, the small red **CHG** LED next to the
-  USB-C connector lights while the cell charges.
-- Close the top onto the bottom shell.
-
-::: tip Two switches: POWER and MODE
-**POWER** (right, next to R1) connects the battery: OFF cuts it, and the battery
-does not charge while OFF. **MODE** (left, next to L1) decides whether the USB
-cable is also a keyboard: *USB* = it types over the cable, *BLE* = the cable only
-charges. Bluetooth works in both positions. MODE is read once at boot, so press
-RESET after flipping it. The firmware docs explain how to find which position is
-which.
-:::
-
-## 5 - Flash the firmware
-
-Set up the Arduino toolchain once, then upload the sketch.
-
-1. Install the **Arduino IDE** (2.x).
-2. **File → Preferences → Additional Boards Manager URLs**, add:
-   ```
-   https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json
-   ```
-3. **Tools → Boards Manager**, search `seeed nrf52`, install **Seeed nRF52 Boards**.
-4. **Tools → Board** → **Seeed XIAO nRF52840** (or Sense). Keep
-   **USB Stack: Adafruit TinyUSB**.
-5. Connect over USB-C, pick the port under **Tools → Port**.
-6. Open `program/xiao_ble_keyboard/xiao_ble_keyboard.ino` and click **Upload**.
-
-Prefer the command line? Compile and upload with `arduino-cli`:
+You need these before soldering, to run the self-test. Install
+[`arduino-cli`](https://arduino.github.io/arduino-cli/latest/installation/),
+then once:
 
 ```sh
-arduino-cli compile --upload -p /dev/ttyACM0 \
-  -b Seeeduino:nrf52:xiaonRF52840Sense .
+arduino-cli config add board_manager.additional_urls \
+  https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json
+arduino-cli core update-index
+arduino-cli core install Seeeduino:nrf52
+arduino-cli lib install "Adafruit SPIFlash" "SdFat - Adafruit Fork"
 ```
 
-::: tip Upload hangs or the port vanishes?
-Double-tap **RESET** to enter the `XIAO-BOOT` bootloader, then retry. The full
-toolchain, WSL/USB-IP notes, and troubleshooting table are in the
-[firmware docs](/firmware#build--flash).
+The repository's `Makefile` finds the connected XIAO by itself:
+
+| Command | Does |
+| --- | --- |
+| `make selftest` | Flash the solder self-test and show its report |
+| `make flash` | Flash the keyboard firmware |
+| `make monitor` | Serial monitor (`s` prints the settings, `R` wipes them) |
+
+Prefer the Arduino IDE? The steps are in the
+[firmware reference](/firmware#toolchain-setup-arduino-ide).
+
+## 5. Solder and self-test
+
+1. **Top side first** (the low parts): the two 330 Ω resistors, the two LEDs
+   (cathode mark as on the silkscreen), the slide switches SW1/SW2 and the
+   side-push switches SW3/SW4.
+2. **Bottom side:** the XIAO, the JST socket J1 and the two hot-swap sockets
+   K1/K2. Solder the XIAO castellations with little solder; nothing may reach
+   the pads under the module.
+3. Plug the board in with **no battery** and run:
+
+   ```sh
+   make selftest
+   ```
+
+   It must end with **RESULT: PASS**. Then press B1, B2, L1 and R1 and flip
+   MODE: each change is printed. "D3 is joined to: D4 D5" means a solder
+   bridge between those pads. Details:
+   [self-test](https://github.com/LuSaxy/claude-keyboard/tree/main/program/clawd_selftest).
+
+## 6. Check the charger and the battery
+
+::: danger The board has no reverse-polarity protection
+JST PH plugs are not wired the same by every seller. A reversed cell gets hot
+and destroys the XIAO's charger. Do both checks below, every time you use a new
+cell.
 :::
 
-## 6 - Pair, then map the buttons
+1. **Charger, no cell connected.** In the self-test report, **VBAT** must be
+   about **4.1–4.2 V**. About 5 V means the charger is damaged: do not connect
+   a cell to that XIAO.
+2. **Polarity.** J1 **pin 1 (+)** is the pad next to the small silkscreen
+   circle on the back. Measure the plug of your cell: the red lead must land on
+   pin 1. If not, swap the two pins in the plug housing (lift the latch with a
+   needle) before plugging it in.
+3. Plug the cell in with **POWER off**, then switch it on. With USB connected
+   the cell charges at 50 mA; the small charge LED next to the USB-C port is
+   on while it charges.
 
-After flashing, the board advertises as **clawd** (short blue pulse). Pairing is
-confirmed *on the device* so no one can silently bond to it.
+The full battery guide, with charging and troubleshooting, is on the
+[parts page](/bom#battery).
 
-1. Open your phone/PC Bluetooth settings and pair with **clawd**.
-2. The LED turns **magenta** — press **Button 1** to accept (green flash) or
-   **Button 2** to reject.
-3. Open any text field and press a button; the key is sent (green flash).
+## 7. Flash and close it up
 
-Now remap the keys, set the LED, or rename the device from the
-[control app](/app) — no install, Chrome / Edge over `https://`.
+```sh
+make flash
+```
 
-::: tip Pairing stuck?
-Clear an old bond with a **bond reset**: hold *both keys* (B1 + B2) while
-powering on (or right after RESET) ~5 s until the LED blinks red 3×, then pair
-again.
-:::
+After flashing, the status LED gives a short **blue** pulse: Clawd is
+advertising. Then assemble:
 
-::: tip Settings stuck after a firmware update?
-Flashing new firmware keeps the saved settings (key mapping, name, gestures),
-so new defaults do not show if older ones are saved. Wipe them with a
-**settings reset**: hold *both shoulders* (L1 + R1) at power-on ~5 s until the
-LED blinks blue 3×. Bonds are kept. The control app has the same as
-*RESET ALL*, and the serial monitor accepts `R` (`s` prints what is saved).
-:::
+1. Lay the cell in the cradle of the bottom shell and drop the battery plate on
+   top. Run the leads along the left wall into the J1 pocket.
+2. Put the board in, XIAO and key sockets down: the plate's two posts sit
+   under the sockets.
+3. Close the top shell: its pegs drop into the board tabs, and five bumps click
+   into the bottom lip all round. To open, pull the halves apart at an arm.
+4. Push the MX switches through the top opening into the hot-swap sockets,
+   then the keycaps.
 
-### Status LED cheat-sheet
+## 8. Pair and map the keys
+
+1. Pair **clawd** in your computer's or phone's Bluetooth settings.
+2. The status LED turns **magenta**: press **B1** (left key) to accept, **B2**
+   to refuse. Nobody can pair with Clawd without pressing a key on it.
+3. Press a key in any text field: B1 sends Escape, B2 Enter, L1 Shift+Tab,
+   R1 Tab.
+
+Remap every button, set the eye brightness and turn on the gestures in the
+[control app](/app) (Chrome or Edge on a computer or Android).
+
+### The two switches
+
+| Switch | Position | Effect |
+| --- | --- | --- |
+| **POWER** (right, next to R1) | I / O | Connects or cuts the battery. The cell only charges with POWER on. |
+| **MODE** (left, next to L1) | USB / Bluetooth | *USB*: the cable is also a keyboard. *Bluetooth*: the cable only charges. Bluetooth works in both. Read at start-up: press RESET after changing it. |
+
+The raised icons on the case show which side is which.
+
+### Status LED
 
 | LED | Meaning |
 | --- | --- |
-| Blue pulse | Advertising / waiting for a connection |
+| Blue pulse | Advertising, waiting for a connection |
+| Off | Connected and idle |
 | Green flash | A key was sent, or a pairing was accepted |
-| Magenta (steady) | Confirm a new pairing — press Button 1 |
-| Red flash | Pairing rejected / failed |
-| Red ×3 at boot | Stored bonds wiped (bond reset, B1 + B2) |
-| Blue ×3 at boot | Saved settings wiped (settings reset, L1 + R1) |
+| Magenta, steady | Confirm a new pairing: press B1 |
+| Red flash | Pairing refused or failed |
+| Red ×3 at start-up | Pairings wiped (bond reset) |
+| Blue ×3 at start-up | Saved settings wiped (settings reset) |
 
-## That's it
+### When something is stuck
 
-The button mapping, name, and LED all live in the firmware's flash and survive
-reboots and deep sleep. Tweak them any time from the [control app](/app).
+| Problem | Fix |
+| --- | --- |
+| A new computer cannot pair | **Bond reset:** hold B1 + B2 while switching on (or right after RESET) for about 5 s, until red ×3. Then forget Clawd on the computer and pair again. |
+| New firmware defaults do not show | Saved settings survive flashing. **Settings reset:** hold L1 + R1 at start-up for about 5 s, until blue ×3. Pairings are kept. The control app's *RESET ALL* does the same. |
+| Upload hangs or the port disappears | Double-tap RESET: a `XIAO-BOOT` drive appears. Run `make flash` again. |
+| Not typing over the cable | MODE must be on *USB*, and the cable must carry data. Press RESET after switching. |
+
+More in the [firmware troubleshooting table](/firmware#troubleshooting).

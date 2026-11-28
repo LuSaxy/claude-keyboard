@@ -9,42 +9,41 @@ Everything needed for one **Clawd V2**. The board parts (U1, K1/K2, SW1–SW4,
 D1/D2, R1/R2, J1) match `models/v2/pcb/bom.csv`, which is what the PCB was
 designed for. The rest are off-board parts.
 
-Prices are **per one Clawd**, in USD, and are placeholders: fill in what you
-actually paid (or the shop's price for your quantity) and update the total.
-Links are examples, not recommendations; any part with the same footprint
+Prices are **per one Clawd**, in USD. A dash means the price is not filled in
+yet. Links are examples, not recommendations; any part with the same footprint
 works.
 
 ## Board parts
 
 | Ref | Qty | Part | Value / MPN | Footprint | LCSC | Link | Unit price | Line total |
 | --- | --- | --- | --- | --- | --- | --- | ---: | ---: |
-| U1 | 1 | Seeed Studio XIAO nRF52840 **Sense** (or plain). **Not** the *Plus* / *Sense Plus*, see [Module](#module-xiao-nrf52840-sense-not-plus) | 102010469 (Sense) / 102010448 | XIAO castellated | C37327670 | [Seeed](https://www.seeedstudio.com/Seeed-XIAO-BLE-Sense-nRF52840-p-5253.html) | $0.00 | $0.00 |
-| K1, K2 | 2 | Kailh hot-swap socket, MX | CPG151101S11 | TH, 10.9 × 5.9 mm | C2803348 | [LCSC](https://www.lcsc.com/product-detail/C2803348.html) | $0.00 | $0.00 |
-| SW1, SW2 | 2 | Slide switch SPDT, 1.5 mm knob (MODE, POWER) | MSK12C02G20-B | SMD MSK12C02 | C22435662 | [LCSC](https://www.lcsc.com/product-detail/C22435662.html) | $0.00 | $0.00 |
-| SW3, SW4 | 2 | Side-push tactile switch, 2.2 N (L1, R1) | Panasonic EVQP7C01K | SMD EVQP7C | C528965 | [LCSC](https://www.lcsc.com/product-detail/C528965.html) | $0.00 | $0.00 |
-| D1, D2 | 2 | LED yellow, 0805 (eyes) | SZYY0805Y | 0805 | C434436 | [LCSC](https://www.lcsc.com/product-detail/C434436.html) | $0.00 | $0.00 |
-| R1, R2 | 2 | Resistor 330 Ω, 0603 (one per LED) | 0603WAF3300T5E | 0603 | C23138 | [LCSC](https://www.lcsc.com/product-detail/C23138.html) | $0.00 | $0.00 |
-| J1 | 1 | JST PH 2.0 mm, 2-pin, SMD right angle (battery) | A2001WR-S-2P | SMD 2P 2.00 mm | C375128 | [LCSC](https://www.lcsc.com/product-detail/C375128.html) | $0.00 | $0.00 |
-| PCB | 1 | Clawd V2 PCB, 2 layers, 1.6 mm | `clawd-v2-gerber.zip` | 59.8 × 36 mm | – | [JLCPCB](https://jlcpcb.com/quote) | $0.00 | $0.00 |
+| U1 | 1 | Seeed Studio XIAO nRF52840 **Sense** (or plain). **Not** the *Plus* / *Sense Plus*, see [Module](#module-xiao-nrf52840-sense-not-plus) | 102010469 (Sense) / 102010448 | XIAO castellated | C37327670 | [Seeed](https://www.seeedstudio.com/Seeed-XIAO-BLE-Sense-nRF52840-p-5253.html) | — | — |
+| K1, K2 | 2 | Kailh hot-swap socket, MX | CPG151101S11 | TH, 10.9 × 5.9 mm | C2803348 | [LCSC](https://www.lcsc.com/product-detail/C2803348.html) | — | — |
+| SW1, SW2 | 2 | Slide switch SPDT, **2.5 mm** knob (MODE, POWER). Same pads as the G20 (2.0 mm) in `bom.csv`; the longer knob is easier to reach with a fingernail | MSK12C02G25-B | SMD MSK12C02 | C22435663 | [LCSC](https://www.lcsc.com/product-detail/C22435663.html) | — | — |
+| SW3, SW4 | 2 | Side-push tactile switch, 2.2 N (L1, R1) | Panasonic EVQP7C01K | SMD EVQP7C | C528965 | [LCSC](https://www.lcsc.com/product-detail/C528965.html) | — | — |
+| D1, D2 | 2 | LED yellow, 0805 (eyes) | SZYY0805Y | 0805 | C434436 | [LCSC](https://www.lcsc.com/product-detail/C434436.html) | — | — |
+| R1, R2 | 2 | Resistor 330 Ω, 0603 (one per LED) | 0603WAF3300T5E | 0603 | C23138 | [LCSC](https://www.lcsc.com/product-detail/C23138.html) | — | — |
+| J1 | 1 | JST PH 2.0 mm, 2-pin, SMD right angle (battery) | A2001WR-S-2P | SMD 2P 2.00 mm | C375128 | [LCSC](https://www.lcsc.com/product-detail/C375128.html) | — | — |
+| PCB | 1 | Clawd V2 PCB, 2 layers, 1.6 mm | `clawd-v2-gerber.zip` | 59.8 × 36 mm | – | [JLCPCB](https://jlcpcb.com/quote) | — | — |
 
 ## Off-board parts
 
 | Qty | Part | Notes | Link | Unit price | Line total |
 | --- | --- | --- | --- | ---: | ---: |
-| 1 | LiPo cell, 1S 3.7 V, **with protection (PCM)**, JST PH 2.0 plug | Up to 40 × 35 × 5 mm (or 30 × 37 × 4 mm with the small-LiPo parts). **Check the plug polarity**, see [Battery](#battery) | [example](https://www.adafruit.com/product/1578) | $0.00 | $0.00 |
-| 2 | Mechanical key switch, MX-compatible | Hot-swap, any MX switch | [example](https://www.aliexpress.com/) | $0.00 | $0.00 |
-| 2 | Keycap, 1u (DSA, double-layer with clear cap) | Clear cap holds a custom legend | [example](https://www.aliexpress.com/) | $0.00 | $0.00 |
-| 2 | Screw for the board tabs (optional) | Self-tapping, about M1.6–M2 × 4–6 mm; head ≤ 4.4 mm | [example](https://www.aliexpress.com/) | $0.00 | $0.00 |
-| – | Filament | Orange shells (PLA/PETG); grey or coloured shoulder buttons; clear/translucent eyes and USB bezel | – | $0.00 | $0.00 |
-| 1 | USB-C cable with **data** lines | Charge-only cables power the board but cannot flash it | – | $0.00 | $0.00 |
+| 1 | LiPo cell, 1S 3.7 V, **with protection (PCM)**, JST PH 2.0 plug | Up to 40 × 35 × 5 mm (or 30 × 37 × 4 mm with the small-LiPo parts). **Check the plug polarity**, see [Battery](#battery) | [example](https://www.adafruit.com/product/1578) | — | — |
+| 2 | Mechanical key switch, MX-compatible | Hot-swap, any MX switch | [example](https://www.aliexpress.com/) | — | — |
+| 2 | Keycap, 1u (DSA, double-layer with clear cap) | Clear cap holds a custom legend | [example](https://www.aliexpress.com/) | — | — |
+| 2 | Screw for the board tabs (optional) | Self-tapping, about M1.6–M2 × 4–6 mm; head ≤ 4.4 mm | [example](https://www.aliexpress.com/) | — | — |
+| – | Filament | Orange shells (PLA/PETG; the L1/R1 paddles are part of them); clear/translucent eyes and USB bezel | – | — | — |
+| 1 | USB-C cable with **data** lines | Charge-only cables power the board but cannot flash it | – | — | — |
 
 ## Total
 
 | | Price |
 | --- | ---: |
-| Board parts | $0.00 |
-| Off-board parts | $0.00 |
-| **Total for one Clawd** | **$0.00** |
+| Board parts | — |
+| Off-board parts | — |
+| **Total for one Clawd** | **—** |
 
 PCB fabs sell boards in lots (usually 5), and LCSC parts often have a minimum
 order; the per-Clawd total above is the share of one build.

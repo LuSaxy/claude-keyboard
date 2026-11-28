@@ -2,15 +2,13 @@
 
 ![Clawd V2 render](models/v2/images/v2-back.webp)
 
-> The image above is a render of the **V2** model (an interactive 3D view on the [site](https://lusaxy.github.io/claude-keyboard/readme)). The latest **V2 prototype** is
-> in [`models/v2/`](models/v2/README.md): editable Ket source, printable STLs
-> (with the battery plate and a small-LiPo variant), two-material 3MFs, assembly
-> STEP, Gerbers and BOM/CPL. It is **not production-approved**; slide-switch
-> fit and antenna keepouts require review before ordering. The original files remain for reference.
+> **Status: V2 prototype.** The rev A boards have been built and type over USB
+> and Bluetooth. Still unverified: the slide-switch fit through the case and the
+> antenna keepout. Fine for building your own; review
+> [`models/v2/`](models/v2/README.md) before ordering a batch.
 
-**Live site:** <https://lusaxy.github.io/claude-keyboard/> — landing page with the
-preview, model downloads, a setup guide, the rendered firmware/README docs, and
-the browser control panel (at `/app/`).
+**Live site:** <https://lusaxy.github.io/claude-keyboard/>: the build guide,
+parts list, model downloads, firmware reference and the browser control app.
 
 **Clawd Keyboard** is a small two-key keyboard (plus two side shoulder buttons on V2) built around the Seeed Studio XIAO
 nRF52840. It can type over Bluetooth LE or USB-HID, run from a LiPo battery, and
@@ -26,7 +24,7 @@ keys like `Escape`/`Enter`, media controls, or your own app shortcuts.
 - Runtime BLE configuration for key mappings, device name, and the external LED.
 - Confirmed BLE pairing, battery reporting, LiPo charging, and deep sleep.
 - Browser control panel (Web Bluetooth) for LED, buttons, and name.
-- Printable mascot-style enclosure and FreeCAD sources in `models/`.
+- Printable mascot-style enclosure (V2: Ket source, STL/3MF, STEP and PCB files in `models/v2/`).
 
 ## Components
 
@@ -56,7 +54,8 @@ The full list with LCSC part numbers, links and a price table is in
 | `Makefile` | Convenience targets that drive the site (`make`, `make docs-build`, …). |
 | `docs/` | Self-contained VitePress project (its own `package.json`): landing, setup guide, models page, and the Web Bluetooth control app (`docs/.vitepress/theme/components/ClawdApp.vue`). |
 | `docs/scripts/prepare.mjs` | Build helper: copies the model files into `docs/public/models` and generates the firmware/README doc pages from source. |
-| `models/` | FreeCAD sources, printable 3MF files, drawing export, and preview image. |
+| `models/v2/` | V2: Ket source, STL/3MF print files, STEP, PCB Gerbers/BOM/CPL, renders and the 3D-viewer model. |
+| `models/` (top level) | Legacy V1: FreeCAD sources, printable 3MF files and drawing export. |
 
 ### Develop the site
 
@@ -106,7 +105,7 @@ Start with [`models/v2/README.md`](models/v2/README.md) for printing, opening th
 
 The original model assets are retained unchanged:
 
-- `models/view.jpeg` - preview image used above.
+- `models/view.jpeg` - V1 preview image.
 - `models/mascot-top.3mf` and `models/mascot-bottom.3mf` - printable enclosure parts.
 - `models/assembly.FCStd` and `models/mascot.FCStd` - FreeCAD source files.
 - `models/assembly_Page__.svg` - exported drawing page.

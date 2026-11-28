@@ -25,6 +25,10 @@ D4/D5 just stay HIGH through the pull-ups and do nothing.
 
 ## Hardware / Wiring
 
+> **On the V2 PCB all of this is already on the board**: you only plug in the
+> battery. This section is the pin reference, and the wiring for a hand-wired
+> (V1-style) build.
+
 Two momentary push-buttons (the only onboard button is RESET), one **MODE** slide
 switch, one **ON/OFF** slide switch, and a single-cell **protected LiPo**.
 Buttons and the MODE switch go between a GPIO and **GND** — internal pull-ups are
@@ -104,7 +108,8 @@ Notes:
 | **Green** flash      | A key was sent, or a pairing was accepted      |
 | **Magenta** (steady) | New pairing waiting for confirm (see below)    |
 | **Red** flash        | Pairing rejected / failed                      |
-| **Red** ×3 (at boot) | Stored bonds wiped (bond reset)                |
+| **Red** ×3 (at boot) | Stored bonds wiped (bond reset, B1 + B2)       |
+| **Blue** ×3 (at boot)| Saved settings wiped (settings reset, L1 + R1) |
 
 ### User LED (BLE controlled)
 
@@ -269,7 +274,7 @@ keymap characteristic):
 Use **↓ (read)** to check the stored value. A written mapping is auto-saved to the
 board's flash, so it survives reboot and deep sleep.
 
-## Toolchain setup (Arduino IDE) Or use commandline (see below)
+## Toolchain setup (Arduino IDE)
 
 1. Install the **Arduino IDE** (2.x recommended).
 2. **File > Preferences > Additional Boards Manager URLs**, add:

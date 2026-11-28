@@ -18,10 +18,10 @@ the switch and RF/assembly details below.
 | `stl/clawd-v2-eye-left.stl`, `stl/clawd-v2-eye-right.stl` | Yellow translucent eye covers. |
 | `stl/clawd-v2-usb-bezel.stl` | Clear USB surround/status-light window. |
 | `stl/clawd-v2-battery-plate.stl` | Drop-in plate over the LiPo (rests on ledges in the bottom shell; keeps the key sockets off the battery, and two posts carry the hot-swap sockets when a key is pressed). Print flat, posts up, one colour. |
-| `stl/clawd-v2-bottom-small-lipo.stl`, `stl/clawd-v2-battery-plate-small-lipo.stl` | `kucuk_pil` configuration: the same parts for a 30 × 37 × 4 mm LiPo (leads from the front-left corner). |
+| `stl/clawd-v2-bottom-small-lipo.stl`, `stl/clawd-v2-battery-plate-small-lipo.stl` | Small-LiPo configuration (`kucuk_pil` in the Ket file): the same parts for a 30 × 37 × 4 mm LiPo (leads from the front-left corner). |
 | `3mf/clawd-v2-top-print.3mf` | Two-material print: orange top shell + clear eye covers, one object per body. |
 | `3mf/clawd-v2-bottom-print.3mf` | Two-material print: bottom shell + clear USB/LED bezel, one object per body. |
-| `3mf/clawd-v2-battery-plate.3mf`, `3mf/clawd-v2-battery-plate-small-lipo.3mf` | Battery plate (normal and `kucuk_pil` LiPo) as 3MF; print flat, one colour. |
+| `3mf/clawd-v2-battery-plate.3mf`, `3mf/clawd-v2-battery-plate-small-lipo.3mf` | Battery plate (normal and small LiPo) as 3MF; print flat, one colour. |
 | `pcb/clawd-v2-gerber.zip` | Gerber layers and Excellon drill only, for bare-board quoting. This is the board that was ordered (rev A). |
 | `pcb/rev-b/clawd-v2-gerber-rev-b.zip` | **Rev B, not ordered, not reviewed:** rev A plus `+`, `−` and `BAT` silkscreen at the battery socket J1 (back side). Exported with a newer Ket, so the GND pours and back mask differ slightly from rev A; check it in a Gerber viewer before ordering. |
 | `pcb/clawd-v2-jlcpcb-prototype.zip` | Gerbers, drill, JLCPCB-style BOM/CPL and a local preflight/order guide. No order was submitted. |

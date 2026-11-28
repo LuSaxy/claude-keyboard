@@ -2,19 +2,23 @@
 title: Models & downloads
 ---
 
-# Models & downloads
+# Print files & models
 
-The latest revision is **Clawd V2**, an unvalidated physical prototype. Download
-the editable Ket file, printable STLs, STEP and PCB manufacturing files below.
-V1 FreeCAD/3MF files are still available for reference; do not mix revisions.
+Everything for **Clawd V2**: print files, the PCB, the editable source and
+renders. Which file to print for which part is in the
+[build guide](/setup#_3-print-the-case).
 
-**Before ordering:** SW1/SW2 actuator fit, XIAO antenna keepouts and the L1/R1
-switch soldering (SW3/SW4 orientation, bridges under the body) need review. Clean CAD/DRC checks do not certify physical fit or DFM.
+::: info Which PCB files
+Order **rev A** (`clawd-v2-gerber.zip`): that is the board that was built and
+tested. **Rev B** only adds `+ − BAT` marks next to the battery socket; it has
+not been ordered yet, so check it in a Gerber viewer first. The open review
+points are on [V2 hardware](/v2#required-review-before-fabrication).
+:::
 
 ## What V2 looks like
 
 Drag to turn it, scroll to zoom, and press **Take apart** to see the parts.
-Hover a part for its name.
+Point at a part for its name.
 
 <Clawd3D />
 
@@ -55,19 +59,24 @@ not have them. J1 pin 1 (+) is next to the small silkscreen circle.
 
 ## Downloads
 
-- [V2 assembly and manufacturing notes](/v2)
-- [Editable Ket project](/models/v2/clawd-v2.ket)
-- [Gerber/drill ZIP, rev A (ordered)](/models/v2/pcb/clawd-v2-gerber.zip)
-- [Gerber/drill ZIP, rev B (+/− marks at J1, not ordered)](/models/v2/pcb/rev-b/clawd-v2-gerber-rev-b.zip)
-- [JLCPCB prototype handoff](/models/v2/pcb/clawd-v2-jlcpcb-prototype.zip)
+| What | File |
+| --- | --- |
+| PCB to order | [Gerber/drill ZIP, rev A](/models/v2/pcb/clawd-v2-gerber.zip) |
+| PCB with assembly files | [JLCPCB package: Gerbers, BOM, CPL, notes](/models/v2/pcb/clawd-v2-jlcpcb-prototype.zip) |
+| PCB, next revision | [Gerber/drill ZIP, rev B](/models/v2/pcb/rev-b/clawd-v2-gerber-rev-b.zip) (not ordered yet) |
+| Editable source | [`clawd-v2.ket`](/models/v2/clawd-v2.ket): open in [Ket](/v2#open-in-another-ket-project), the CAD/PCB tool it was made in |
+| Notes | [V2 hardware & manufacturing](/v2) |
+
+Every file:
 
 <ModelDownloads />
 
-## Legacy files
+## Legacy V1 files
 
-- **`mascot-top.3mf` / `mascot-bottom.3mf`** — the two printable enclosure shells.
-- **`mascot.FCStd` / `assembly.FCStd`** — editable FreeCAD sources.
-- **`assembly_Page__.svg`** — exported drawing page.
-- **`view.jpeg`** — the preview render used across the site.
+The first, hand-wired Clawd. Kept for reference; its shells do not fit the V2
+board.
 
-More build photos and renders can be dropped into `models/` as the project grows.
+- **`mascot-top.3mf` / `mascot-bottom.3mf`**: the two enclosure shells.
+- **`mascot.FCStd` / `assembly.FCStd`**: FreeCAD sources.
+- **`assembly_Page__.svg`**: drawing page.
+- **`view.jpeg`**: V1 preview image.

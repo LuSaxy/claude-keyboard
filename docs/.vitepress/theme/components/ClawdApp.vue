@@ -166,15 +166,30 @@ function makeButton(tag, code, mod = 0, hint = "") {
 }
 
 const badgeText = computed(() =>
-  statusKind.value === "error"
-    ? "ERROR"
-    : connected.value
-      ? "CONNECTED"
-      : "DISCONNECTED",
+  !supported.value
+    ? "NOT SUPPORTED"
+    : statusKind.value === "error"
+      ? "ERROR"
+      : connected.value
+        ? "CONNECTED"
+        : "DISCONNECTED",
 );
 const badgeClass = computed(() =>
-  statusKind.value === "error" ? "error" : connected.value ? "ready" : "",
+  !supported.value ? "" : statusKind.value === "error" ? "error" : connected.value ? "ready" : "",
 );
+// iPhone and iPad: no browser there has Web Bluetooth (they all use WebKit).
+const isIOS = ref(false);
+// Full names for screen readers; the cards show the short tag.
+const BUTTON_NAMES = {
+  B1: "B1, left key",
+  B2: "B2, right key",
+  L1: "L1, left shoulder",
+  R1: "R1, right shoulder",
+  TAP: "Double tap",
+};
+function buttonName(button) {
+  return BUTTON_NAMES[button.tag] || button.hint || button.tag;
+}
 
 function setStatus(message, kind = "") {
   logText.value = message;
@@ -498,8 +513,8 @@ async function userConnect(promise) {
 async function connect() {
   if (!navigator.bluetooth) {
     setStatus(
-      "Web Bluetooth is not available. Use Chrome or Edge, served over https:// " +
-        "or http://localhost (not file://).",
+      "This browser cannot talk to Bluetooth devices. Open this page in Chrome or Edge " +
+        "on a computer or an Android phone.",
       "error",
     );
     return;
@@ -590,11 +605,10 @@ async function sendCommand(command) {
 onMounted(() => {
   if (!navigator.bluetooth) {
     supported.value = false;
-    setStatus(
-      "Web Bluetooth is not available in this browser. Use Chrome or Edge over " +
-        "https:// or http://localhost.",
-      "error",
-    );
+    isIOS.value =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    setStatus("This browser has no Web Bluetooth. Nothing to connect to here.");
     return;
   }
   autoConnectKnown();
@@ -624,11 +638,27 @@ async function autoConnectKnown() {
         <span class="mark">Clawd</span>
         <span class="sub">BLE Control</span>
       </div>
-      <span class="status" :class="badgeClass">{{ badgeText }}</span>
+      <span class="status" :class="badgeClass" role="status">{{ badgeText }}</span>
     </header>
 
-    <section class="panel">
-      <h3>Device</h3>
+    <section v-if="!supported" class="unsupported" aria-labelledby="unsupported-h">
+      <h2 id="unsupported-h">This browser can't talk to Clawd</h2>
+      <p v-if="isIOS">
+        iPhone and iPad browsers have no Web Bluetooth, Chrome included. Open this page on a
+        computer (Chrome or Edge) or an Android phone (Chrome).
+      </p>
+      <p v-else>
+        The control app needs Web Bluetooth: open this page in <b>Chrome</b> or <b>Edge</b> on a
+        computer or an Android phone. Firefox and Safari do not have it.
+      </p>
+      <p>
+        Clawd still works as a keyboard without the app: B1 sends Escape, B2 Enter, L1 Shift+Tab
+        and R1 Tab until you remap them.
+      </p>
+    </section>
+
+    <section class="panel" :class="{ disabled: !supported }" :inert="!supported || undefined">
+      <h2>Device</h2>
       <p class="hint">
         Press CONNECT and pick your Clawd. It can stay connected to your computer as a
         keyboard; no need to forget it. Chrome / Edge only.
@@ -648,29 +678,30 @@ async function autoConnectKnown() {
         </li>
       </ul>
       <div class="ctl">
-        <button class="btn primary" :disabled="connected" @click="run(userConnect(connect()))">
+        <button class="btn primary" :disabled="connected || !supported" @click="run(userConnect(connect()))">
           {{ knownDevices.length ? "PAIR NEW" : "CONNECT" }}
         </button>
         <button class="btn" :disabled="!connected" @click="disconnect()">DROP</button>
       </div>
     </section>
 
-    <section class="panel" :class="{ disabled: !connected }">
-      <h3>Name</h3>
+    <section class="panel" :class="{ disabled: !connected }" :inert="!connected || undefined">
+      <h2 id="name-h">Name</h2>
       <div class="ctl">
-        <input v-model="name" maxlength="15" autocomplete="off" placeholder="clawd" />
+        <input v-model="name" maxlength="15" autocomplete="off" placeholder="clawd" aria-labelledby="name-h" />
         <button class="btn" @click="run(saveName(), 'Name saved. Reconnect for BLE; reboot for USB.')">
           SET
         </button>
         <button class="btn" @click="run(sendCommand(CMD_RESET_NAME), 'Name reset to clawd.')">
-          RST
+          RESET
         </button>
       </div>
     </section>
 
-    <section class="panel" :class="{ disabled: !connected }">
-      <h3>LED <span class="val">{{ led }}</span></h3>
+    <section class="panel" :class="{ disabled: !connected }" :inert="!connected || undefined">
+      <h2 id="led-h">Eye LEDs <span class="val">{{ led }}</span></h2>
       <input
+        aria-labelledby="led-h"
         type="range"
         min="0"
         max="255"
@@ -685,21 +716,23 @@ async function autoConnectKnown() {
       </div>
     </section>
 
-    <section class="panel" :class="{ disabled: !connected }">
-      <h3>Buttons</h3>
+    <section class="panel" :class="{ disabled: !connected }" :inert="!connected || undefined">
+      <h2>Buttons</h2>
+      <p class="hint">Changes are sent to Clawd when you press <b>SAVE</b>.</p>
       <div class="keys">
         <article
           v-for="button in buttons"
           :key="button.tag"
           class="key"
           :class="{ disabled: (button === bl1 || button === br1) && !shoulderSupported }"
+          :inert="((button === bl1 || button === br1) && !shoulderSupported) || undefined"
         >
-          <span class="tag">{{ button.tag }}</span>
-          <select v-model.number="button.type" @change="onTypeChange(button)">
+          <span class="tag" aria-hidden="true">{{ button.tag }}</span>
+          <select v-model.number="button.type" :aria-label="`${buttonName(button)}: key type`" @change="onTypeChange(button)">
             <option :value="TYPE_KEYBOARD">Keyboard key</option>
             <option :value="TYPE_MEDIA">Media key</option>
           </select>
-          <select v-model.number="button.sel" @change="onSelChange(button)">
+          <select v-model.number="button.sel" :aria-label="`${buttonName(button)}: key`" @change="onSelChange(button)">
             <optgroup v-for="[group, items] in groupsFor(button.type)" :key="group" :label="group">
               <option v-for="[label, value] in items" :key="value" :value="value">
                 {{ label }}
@@ -710,6 +743,7 @@ async function autoConnectKnown() {
           <template v-if="button.custom">
             <input
               class="custom-code"
+              :aria-label="`${buttonName(button)}: HID code`"
               v-model="button.customInput"
               @input="parseCustom(button)"
               placeholder="e.g. 0x2F or 47"
@@ -720,10 +754,10 @@ async function autoConnectKnown() {
             <span v-else class="custom-msg">Sends HID {{ toHex(button.code) }}</span>
           </template>
           <div class="mods" :class="{ disabled: button.type === TYPE_MEDIA }">
-            <label><input type="checkbox" v-model="button.ctrl" :disabled="button.type === TYPE_MEDIA" />CTRL</label>
-            <label><input type="checkbox" v-model="button.shift" :disabled="button.type === TYPE_MEDIA" />SHFT</label>
-            <label><input type="checkbox" v-model="button.alt" :disabled="button.type === TYPE_MEDIA" />ALT</label>
-            <label><input type="checkbox" v-model="button.gui" :disabled="button.type === TYPE_MEDIA" />GUI</label>
+            <label :title="'Control'"><input type="checkbox" v-model="button.ctrl" :disabled="button.type === TYPE_MEDIA" />CTRL</label>
+            <label :title="'Shift'"><input type="checkbox" v-model="button.shift" :disabled="button.type === TYPE_MEDIA" />SHIFT</label>
+            <label :title="'Alt'"><input type="checkbox" v-model="button.alt" :disabled="button.type === TYPE_MEDIA" />ALT</label>
+            <label :title="'Command / Windows'"><input type="checkbox" v-model="button.gui" :disabled="button.type === TYPE_MEDIA" />GUI</label>
           </div>
         </article>
       </div>
@@ -733,6 +767,7 @@ async function autoConnectKnown() {
       </p>
       <template v-if="connected && keymapEntries >= 9 && motion && motion.present">
         <h3 class="sub-h">Gestures</h3>
+        <p class="hint">The switches below save as soon as you change them; the keys need <b>SAVE</b>.</p>
         <div class="gesture-toggles">
           <label><input type="checkbox" v-model="motion.wake" @change="run(saveMotion(), 'Gestures saved.')" />Lift to wake</label>
           <label><input type="checkbox" v-model="motion.tap" @change="run(saveMotion(), 'Gestures saved.')" />Double tap</label>
@@ -751,12 +786,12 @@ async function autoConnectKnown() {
                 ((button === gFwd || button === gBack) && !motion.pitch),
             }"
           >
-            <span class="tag" :title="button.hint">{{ button.tag }}</span>
-            <select v-model.number="button.type" @change="onTypeChange(button)">
+            <span class="tag" :title="button.hint" aria-hidden="true">{{ button.tag }}</span>
+            <select v-model.number="button.type" :aria-label="`${buttonName(button)}: key type`" @change="onTypeChange(button)">
               <option :value="TYPE_KEYBOARD">Keyboard key</option>
               <option :value="TYPE_MEDIA">Media key</option>
             </select>
-            <select v-model.number="button.sel" @change="onSelChange(button)">
+            <select v-model.number="button.sel" :aria-label="`${buttonName(button)}: key`" @change="onSelChange(button)">
               <optgroup v-for="[group, items] in groupsFor(button.type)" :key="group" :label="group">
                 <option v-for="[label, value] in items" :key="value" :value="value">
                   {{ label }}
@@ -767,6 +802,7 @@ async function autoConnectKnown() {
             <template v-if="button.custom">
               <input
                 class="custom-code"
+              :aria-label="`${buttonName(button)}: HID code`"
                 v-model="button.customInput"
                 @input="parseCustom(button)"
                 placeholder="e.g. 0x2F or 47"
@@ -777,10 +813,10 @@ async function autoConnectKnown() {
               <span v-else class="custom-msg">Sends HID {{ toHex(button.code) }}</span>
             </template>
             <div class="mods" :class="{ disabled: button.type === TYPE_MEDIA }">
-              <label><input type="checkbox" v-model="button.ctrl" :disabled="button.type === TYPE_MEDIA" />CTRL</label>
-              <label><input type="checkbox" v-model="button.shift" :disabled="button.type === TYPE_MEDIA" />SHFT</label>
-              <label><input type="checkbox" v-model="button.alt" :disabled="button.type === TYPE_MEDIA" />ALT</label>
-              <label><input type="checkbox" v-model="button.gui" :disabled="button.type === TYPE_MEDIA" />GUI</label>
+              <label :title="'Control'"><input type="checkbox" v-model="button.ctrl" :disabled="button.type === TYPE_MEDIA" />CTRL</label>
+              <label :title="'Shift'"><input type="checkbox" v-model="button.shift" :disabled="button.type === TYPE_MEDIA" />SHIFT</label>
+              <label :title="'Alt'"><input type="checkbox" v-model="button.alt" :disabled="button.type === TYPE_MEDIA" />ALT</label>
+              <label :title="'Command / Windows'"><input type="checkbox" v-model="button.gui" :disabled="button.type === TYPE_MEDIA" />GUI</label>
             </div>
           </article>
         </div>
@@ -800,8 +836,8 @@ async function autoConnectKnown() {
     </section>
 
     <section class="panel">
-      <h3>Log</h3>
-      <pre class="log" :class="logKind">{{ logText }}</pre>
+      <h2>Log</h2>
+      <pre class="log" :class="logKind" aria-live="polite">{{ logText }}</pre>
     </section>
   </div>
 </template>
@@ -885,10 +921,34 @@ async function autoConnectKnown() {
 }
 
 .panel.disabled {
-  opacity: 0.55;
-  pointer-events: none;
+  opacity: 0.6;
 }
 
+.unsupported {
+  border: 1px solid var(--vp-c-brand-3);
+  background: var(--vp-c-brand-softer);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.unsupported h2 {
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  font-size: 17px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--vp-c-text-1);
+}
+
+.unsupported p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--vp-c-text-1);
+}
+
+.panel h2,
 .panel h3 {
   margin: 0 0 12px;
   font-size: 11px;
@@ -1118,7 +1178,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .custom-msg.error {
-  color: #c0392b;
+  color: #b3261e;
 }
 
 .mods {
@@ -1204,11 +1264,11 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .log.ready {
-  color: #2f8f5b;
+  color: #1f6e44;
 }
 
 .log.error {
-  color: #c0392b;
+  color: #b3261e;
 }
 
 @media (max-width: 460px) {

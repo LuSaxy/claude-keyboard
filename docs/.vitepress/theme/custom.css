@@ -4,9 +4,12 @@
 
 :root {
   /* Brand / accent — Claude clay coral */
-  --vp-c-brand-1: #b15c3f; /* links + emphasis (needs contrast on cream) */
-  --vp-c-brand-2: #c06a4b;
-  --vp-c-brand-3: #cc785c; /* solid buttons */
+  /* Links, inline code and solid buttons sit on cream, tinted code and tip
+     backgrounds: these stay >= 4.5:1 on all of them (white on brand-3 5.5:1). */
+  --vp-c-brand-1: #93432a; /* links + inline code */
+  --vp-c-brand-2: #93432a; /* button hover */
+  --vp-c-brand-3: #a64f35; /* solid buttons */
+  --vp-c-text-3: #67676c; /* code language labels, placeholders */
   --vp-c-brand-soft: rgba(204, 120, 92, 0.14);
   --vp-c-brand-softer: rgba(204, 120, 92, 0.08);
 
@@ -28,9 +31,13 @@
   --vp-button-brand-hover-bg: var(--vp-c-brand-2);
   --vp-button-brand-active-bg: var(--vp-c-brand-1);
 
-  /* Home hero */
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #cc785c, #d99a73);
+  /* Callouts in the cream palette instead of the default greys. */
+  --vp-custom-block-info-bg: #f1ede2;
+  --vp-custom-block-info-border: #e2dccb;
+  --vp-custom-block-info-code-bg: #e7e2d4;
+
+  /* Home hero: solid clay, no gradient text. */
+  --vp-home-hero-name-color: #a64f35;
   --vp-home-hero-image-background-image: linear-gradient(
     -45deg,
     rgba(204, 120, 92, 0.35),
@@ -43,6 +50,8 @@
   --vp-c-brand-1: #e2a98f;
   --vp-c-brand-2: #d98c70;
   --vp-c-brand-3: #cc785c;
+  --vp-c-text-3: #98989f;
+  --vp-home-hero-name-color: #e2a98f;
   --vp-c-brand-soft: rgba(204, 120, 92, 0.2);
   --vp-c-brand-softer: rgba(204, 120, 92, 0.12);
   --vp-button-brand-text: #1f1410;
@@ -107,4 +116,97 @@
     max-width: 520px;
     height: 360px;
   }
+}
+
+/* Browser surfaces in the palette. */
+::selection {
+  background: rgba(166, 79, 53, 0.22);
+}
+:root {
+  accent-color: var(--vp-c-brand-3);
+  caret-color: var(--vp-c-brand-1);
+}
+.vp-doc a {
+  text-underline-offset: 2px;
+}
+.vp-doc table td,
+.vp-doc table th {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tap targets on phones: hero actions at least 44 px tall. */
+@media (max-width: 959px) {
+  .VPHero .VPButton {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* "What it takes" strip on the home page: plain facts in a ruled table,
+   set like a spec sheet, instead of feature cards. */
+/* The home content container pads 24/48/64 px like the hero, but is
+   1280 px wide against the hero's 1152 px + padding: match the hero so
+   the strip's left edge lines up with the title. */
+.clawd-specs {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+}
+@media (min-width: 1280px) {
+  .clawd-specs { margin-left: calc((100% - 1152px) / 2); }
+}
+.clawd-specs .vp-doc,
+.vp-doc .clawd-specs dl,
+.vp-doc .clawd-specs dd { line-height: 1.5; }
+.clawd-specs dl {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .clawd-specs dl { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 960px) {
+  .clawd-specs dl { grid-template-columns: repeat(3, 1fr); }
+}
+.clawd-specs dl {
+  margin: 0;
+  border-top: 2px solid var(--vp-c-text-1);
+}
+.clawd-specs dl > div {
+  padding: 14px 20px 18px 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+.clawd-specs dt {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2);
+}
+.clawd-specs dd {
+  margin: 6px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--vp-c-text-1);
+}
+.clawd-specs dd strong {
+  font-size: 17px;
+}
+.clawd-specs .note {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: var(--vp-c-text-2);
+}
+.clawd-specs .note a {
+  color: var(--vp-c-brand-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Build-guide steps: numbered h2s carry the sequence. */
+.vp-doc .step-meta {
+  margin-top: -8px;
+  font-size: 14px;
+  color: var(--vp-c-text-2);
 }
