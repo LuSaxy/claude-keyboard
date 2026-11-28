@@ -113,7 +113,8 @@ are supplied as geometry backups if those external sources change.
 ## Required review before fabrication
 
 1. **Slide switches SW1/SW2:** current 3D representations are bounding boxes,
-   not accurate MSK12C02G20-B actuator geometry. Pockets are 4.6 × 2.6 mm, but
+   not accurate actuator geometry. The BOM now specifies MSK12C02G25-B
+   (2.5 mm knob, same pads as the G20 on the first builds). Pockets are 4.6 × 2.6 mm, but
    height, travel and reach through the 1.8 mm wall are **not verified** against
    a physical part. Measure a sample or supply an accurate model, then adjust
    the openings/add actuator extensions before printing final shells.
