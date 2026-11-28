@@ -67,16 +67,6 @@ not have them. J1 pin 1 (+) is next to the small silkscreen circle.
 | Editable source | [`clawd-v2.ket`](/models/v2/clawd-v2.ket): open in [Ket](/v2#open-in-another-ket-project), the CAD/PCB tool it was made in |
 | Notes | [V2 hardware & manufacturing](/v2) |
 
-Every file:
+Every file, by what it is for:
 
 <ModelDownloads />
-
-## Legacy V1 files
-
-The first, hand-wired Clawd. Kept for reference; its shells do not fit the V2
-board.
-
-- **`mascot-top.3mf` / `mascot-bottom.3mf`**: the two enclosure shells.
-- **`mascot.FCStd` / `assembly.FCStd`**: FreeCAD sources.
-- **`assembly_Page__.svg`**: drawing page.
-- **`view.jpeg`**: V1 preview image.

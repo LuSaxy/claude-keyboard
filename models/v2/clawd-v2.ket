@@ -32166,6 +32166,435 @@
           }
         ]
       }
+    },
+    {
+      "cmd": "set_parameters",
+      "args": {
+        "parameters": [
+          {
+            "name": "dip_ch",
+            "expr": 0.8,
+            "description": "45° chamfer on the outside of the MODE/POWER windows (top and sides; the bottom stays straight above the state icons)"
+          }
+        ]
+      }
+    },
+    {
+      "cmd": "loft",
+      "args": {
+        "name": "dip_ch_mode_f",
+        "note": "chamfer cutter for the switch window: fingernail reaches the knob",
+        "hidden": true,
+        "sections": [
+          {
+            "plane": "XZ",
+            "offset": "body_y1-dip_ch",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w",
+              "h": "dip_top-(dip_cz-dip_win_h/2)",
+              "center": [
+                "mode_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          },
+          {
+            "plane": "XZ",
+            "offset": "body_y1+0.5",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w+2*(dip_ch+0.5)",
+              "h": "dip_top+dip_ch+0.5-(dip_cz-dip_win_h/2)",
+              "center": [
+                "mode_x",
+                "(dip_cz-dip_win_h/2+dip_top+dip_ch+0.5)/2"
+              ]
+            }
+          }
+        ],
+        "ruled": true
+      }
+    },
+    {
+      "cmd": "loft",
+      "args": {
+        "name": "dip_ch_pwr_f",
+        "note": "chamfer cutter for the switch window: fingernail reaches the knob",
+        "hidden": true,
+        "sections": [
+          {
+            "plane": "XZ",
+            "offset": "body_y1-dip_ch",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w",
+              "h": "dip_top-(dip_cz-dip_win_h/2)",
+              "center": [
+                "pwr_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          },
+          {
+            "plane": "XZ",
+            "offset": "body_y1+0.5",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w+2*(dip_ch+0.5)",
+              "h": "dip_top+dip_ch+0.5-(dip_cz-dip_win_h/2)",
+              "center": [
+                "pwr_x",
+                "(dip_cz-dip_win_h/2+dip_top+dip_ch+0.5)/2"
+              ]
+            }
+          }
+        ],
+        "ruled": true
+      }
+    },
+    {
+      "cmd": "loft",
+      "args": {
+        "name": "dip_ch_mode_b",
+        "note": "chamfer cutter for the switch window: fingernail reaches the knob",
+        "hidden": true,
+        "sections": [
+          {
+            "plane": "XZ",
+            "offset": "body_y1-dip_ch",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w",
+              "h": "dip_top-(dip_cz-dip_win_h/2)",
+              "center": [
+                "mode_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          },
+          {
+            "plane": "XZ",
+            "offset": "body_y1+0.5",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w+2*(dip_ch+0.5)",
+              "h": "dip_top+dip_ch+0.5-(dip_cz-dip_win_h/2)",
+              "center": [
+                "mode_x",
+                "(dip_cz-dip_win_h/2+dip_top+dip_ch+0.5)/2"
+              ]
+            }
+          }
+        ],
+        "ruled": true
+      }
+    },
+    {
+      "cmd": "loft",
+      "args": {
+        "name": "dip_ch_pwr_b",
+        "note": "chamfer cutter for the switch window: fingernail reaches the knob",
+        "hidden": true,
+        "sections": [
+          {
+            "plane": "XZ",
+            "offset": "body_y1-dip_ch",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w",
+              "h": "dip_top-(dip_cz-dip_win_h/2)",
+              "center": [
+                "pwr_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          },
+          {
+            "plane": "XZ",
+            "offset": "body_y1+0.5",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w+2*(dip_ch+0.5)",
+              "h": "dip_top+dip_ch+0.5-(dip_cz-dip_win_h/2)",
+              "center": [
+                "pwr_x",
+                "(dip_cz-dip_win_h/2+dip_top+dip_ch+0.5)/2"
+              ]
+            }
+          }
+        ],
+        "ruled": true
+      }
+    },
+    {
+      "cmd": "update_feature",
+      "args": {
+        "name": "front_cut",
+        "set": {
+          "tools": [
+            "key_open",
+            "mx_hole1",
+            "mx_hole2",
+            "dip_slot1",
+            "dip_slot2",
+            "lev_slot_a_l",
+            "lev_slot_b_l",
+            "lev_slot_c_l",
+            "lev_slot_a_r",
+            "lev_slot_b_r",
+            "lev_slot_c_r",
+            "dip_ch_mode_f",
+            "dip_ch_pwr_f"
+          ]
+        }
+      }
+    },
+    {
+      "cmd": "update_feature",
+      "args": {
+        "name": "back_cut",
+        "set": {
+          "tools": [
+            "pilot0",
+            "pilot1",
+            "xiao_relief",
+            "bdip1",
+            "bdip2",
+            "bezel_open",
+            "bezel_seat",
+            "snap_dimple_arm_l",
+            "snap_dimple_arm_r",
+            "snap_dimple_side_l",
+            "snap_dimple_side_r",
+            "snap_dimple_front",
+            "lev_win_l",
+            "lev_win_r",
+            "dip_ch_mode_b",
+            "dip_ch_pwr_b"
+          ]
+        }
+      }
+    },
+    {
+      "cmd": "update_feature",
+      "args": {
+        "name": "front_cut",
+        "set": {
+          "tools": [
+            "key_open",
+            "mx_hole1",
+            "mx_hole2",
+            "dip_slot1",
+            "dip_slot2",
+            "lev_slot_a_l",
+            "lev_slot_b_l",
+            "lev_slot_c_l",
+            "lev_slot_a_r",
+            "lev_slot_b_r",
+            "lev_slot_c_r"
+          ]
+        }
+      }
+    },
+    {
+      "cmd": "rename_feature",
+      "args": {
+        "name": "front_shell",
+        "to": "front_shell_body",
+        "keep_checks": true
+      }
+    },
+    {
+      "cmd": "boolean",
+      "args": {
+        "name": "front_shell",
+        "note": "top shell: chamfer on the MODE/POWER windows so a fingernail reaches the knob",
+        "color": "#ff7a1a",
+        "op": "cut",
+        "target": "front_shell_body",
+        "tools": [
+          "dip_ch_mode_f",
+          "dip_ch_pwr_f"
+        ]
+      }
+    },
+    {
+      "cmd": "assign_material",
+      "args": {
+        "names": [
+          "front_shell"
+        ],
+        "material": "pla_orange"
+      }
+    },
+    {
+      "cmd": "set_parameters",
+      "args": {
+        "parameters": [
+          {
+            "name": "lbl_state_z",
+            "expr": "split-2.6-dip_ch"
+          },
+          {
+            "name": "dip_ch",
+            "expr": 0.8,
+            "description": "45° chamfer on the outside of the MODE/POWER windows, all four sides (the state icons sit dip_ch lower to clear it)"
+          }
+        ]
+      }
+    },
+    {
+      "cmd": "loft",
+      "args": {
+        "name": "dip_ch_mode_f",
+        "note": "chamfer cutter for the switch window, all four sides: fingernail reaches the knob",
+        "hidden": true,
+        "sections": [
+          {
+            "plane": "XZ",
+            "offset": "body_y1-dip_ch",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w",
+              "h": "dip_top-(dip_cz-dip_win_h/2)",
+              "center": [
+                "mode_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          },
+          {
+            "plane": "XZ",
+            "offset": "body_y1+0.5",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w+2*(dip_ch+0.5)",
+              "h": "dip_top-(dip_cz-dip_win_h/2)+2*(dip_ch+0.5)",
+              "center": [
+                "mode_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          }
+        ],
+        "ruled": true,
+        "replace": true
+      }
+    },
+    {
+      "cmd": "loft",
+      "args": {
+        "name": "dip_ch_pwr_f",
+        "note": "chamfer cutter for the switch window, all four sides: fingernail reaches the knob",
+        "hidden": true,
+        "sections": [
+          {
+            "plane": "XZ",
+            "offset": "body_y1-dip_ch",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w",
+              "h": "dip_top-(dip_cz-dip_win_h/2)",
+              "center": [
+                "pwr_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          },
+          {
+            "plane": "XZ",
+            "offset": "body_y1+0.5",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w+2*(dip_ch+0.5)",
+              "h": "dip_top-(dip_cz-dip_win_h/2)+2*(dip_ch+0.5)",
+              "center": [
+                "pwr_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          }
+        ],
+        "ruled": true,
+        "replace": true
+      }
+    },
+    {
+      "cmd": "loft",
+      "args": {
+        "name": "dip_ch_mode_b",
+        "note": "chamfer cutter for the switch window, all four sides: fingernail reaches the knob",
+        "hidden": true,
+        "sections": [
+          {
+            "plane": "XZ",
+            "offset": "body_y1-dip_ch",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w",
+              "h": "dip_top-(dip_cz-dip_win_h/2)",
+              "center": [
+                "mode_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          },
+          {
+            "plane": "XZ",
+            "offset": "body_y1+0.5",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w+2*(dip_ch+0.5)",
+              "h": "dip_top-(dip_cz-dip_win_h/2)+2*(dip_ch+0.5)",
+              "center": [
+                "mode_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          }
+        ],
+        "ruled": true,
+        "replace": true
+      }
+    },
+    {
+      "cmd": "loft",
+      "args": {
+        "name": "dip_ch_pwr_b",
+        "note": "chamfer cutter for the switch window, all four sides: fingernail reaches the knob",
+        "hidden": true,
+        "sections": [
+          {
+            "plane": "XZ",
+            "offset": "body_y1-dip_ch",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w",
+              "h": "dip_top-(dip_cz-dip_win_h/2)",
+              "center": [
+                "pwr_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          },
+          {
+            "plane": "XZ",
+            "offset": "body_y1+0.5",
+            "profile": {
+              "kind": "rect",
+              "w": "dip_win_w+2*(dip_ch+0.5)",
+              "h": "dip_top-(dip_cz-dip_win_h/2)+2*(dip_ch+0.5)",
+              "center": [
+                "pwr_x",
+                "(dip_cz-dip_win_h/2+dip_top)/2"
+              ]
+            }
+          }
+        ],
+        "ruled": true,
+        "replace": true
+      }
     }
   ]
 }

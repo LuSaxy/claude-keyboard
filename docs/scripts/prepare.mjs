@@ -65,7 +65,9 @@ async function copyModels() {
       await mkdir(path.dirname(dest), { recursive: true });
       await cp(src, dest);
       // Renders are shown on the Models page, not listed as downloads.
-      if (!name.startsWith("v2/images/") && !name.startsWith("v2/web/")) files.push({ name, size: info.size });
+      // Loose Gerber layers are inside the PCB ZIPs; the list shows the ZIPs.
+      const looseGerber = /^v2\/pcb\/board[-.]/.test(name);
+      if (!name.startsWith("v2/images/") && !name.startsWith("v2/web/") && !looseGerber) files.push({ name, size: info.size });
     }
   }
   await walk();

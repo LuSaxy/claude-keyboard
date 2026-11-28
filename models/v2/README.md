@@ -1,8 +1,8 @@
 # Clawd V2
 
 V2 is the current Clawd: the PCB, the case and the firmware in this repository
-are the ones in use. The V1 files in `models/` are kept for reference only. Do
-not mix V1 and V2 shells or boards.
+are the ones in use. The first, hand-wired V1 is no longer kept here (it is in
+the git history); its shells do not fit the V2 board.
 
 ## Files
 
@@ -90,7 +90,9 @@ are supplied as geometry backups if those external sources change.
   bottom shell. The lower part is 1 mm thin, so even fully pressed it stays
   0.9 mm away from the board edge.
 - Openings are kept small: the slide switch windows end 0.25 mm above the
-  switch body and the flexure leaf sits flush with the outer wall. Only a
+  switch body and the flexure leaf sits flush with the outer wall. The
+  MODE/POWER windows have a 0.8 mm 45° chamfer on all four outside edges, so
+  a fingernail reaches the knob; the state icons sit below the chamfer. Only a
   0.4 mm slit remains around each paddle so it can move.
 - Print **both shells again** for this revision (labels and snap grooves are on
   the bottom shell, the matching bumps on the top shell). Do not mix with older

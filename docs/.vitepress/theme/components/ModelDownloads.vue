@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { withBase } from "vitepress";
 
 const TYPES = {
@@ -11,15 +11,32 @@ const TYPES = {
   csv: { tag: "Assembly", note: "BOM or component placement list" },
   json: { tag: "Report", note: "Machine-readable verification / manufacturing information" },
   md: { tag: "Guide", note: "Printing, assembly and ordering notes" },
-  fcstd: { tag: "FreeCAD", note: "Editable CAD source" },
-  svg: { tag: "Drawing", note: "Vector drawing export" },
-  jpeg: { tag: "Image", note: "Render / photo" },
-  jpg: { tag: "Image", note: "Render / photo" },
-  png: { tag: "Image", note: "Render / photo" },
 };
 
 const files = ref(null);
 const failed = ref(false);
+
+// Tabs group the files by what they are for.
+const GROUPS = [
+  { id: "print", label: "Print", test: (n) => /\.(stl|3mf)$/i.test(n) },
+  { id: "pcb", label: "PCB", test: (n) => n.includes("/pcb/") },
+  { id: "source", label: "Source & docs", test: () => true },
+];
+const tab = ref("print");
+
+function groupOf(name) {
+  return GROUPS.find((g) => g.test(name)).id;
+}
+
+const shown = computed(() => (files.value || []).filter((f) => groupOf(f.name) === tab.value));
+const counts = computed(() =>
+  Object.fromEntries(GROUPS.map((g) => [g.id, (files.value || []).filter((f) => groupOf(f.name) === g.id).length])),
+);
+
+// Paths are shown without the common "v2/" folder.
+function shortName(name) {
+  return name.replace(/^v2\//, "");
+}
 
 function ext(name) {
   const i = name.lastIndexOf(".");
@@ -62,16 +79,31 @@ onMounted(async () => {
     </p>
     <p v-else-if="files === null" class="models-empty">Loading files…</p>
     <p v-else-if="files.length === 0" class="models-empty">No model files published yet.</p>
-    <div v-else class="models-grid">
+    <template v-else>
+    <div class="models-tabs" role="tablist">
+      <button
+        v-for="g in GROUPS"
+        :key="g.id"
+        type="button"
+        role="tab"
+        class="models-tab"
+        :class="{ active: tab === g.id }"
+        :aria-selected="tab === g.id"
+        @click="tab = g.id"
+      >
+        {{ g.label }} <span class="models-count">{{ counts[g.id] }}</span>
+      </button>
+    </div>
+    <div class="models-grid">
       <a
-        v-for="file in files"
+        v-for="file in shown"
         :key="file.name"
         class="model-card"
         :href="withBase('/models/' + file.name)"
         download
       >
         <span class="model-type">{{ meta(file.name).tag }}</span>
-        <span class="model-name">{{ file.name }}</span>
+        <span class="model-name">{{ shortName(file.name) }}</span>
         <span class="model-note">{{ meta(file.name).note }}</span>
         <span class="model-foot">
           <span class="model-size">{{ humanSize(file.size) }}</span>
@@ -79,6 +111,7 @@ onMounted(async () => {
         </span>
       </a>
     </div>
+    </template>
   </div>
 </template>
 
@@ -89,6 +122,40 @@ onMounted(async () => {
 
 .models-empty {
   color: var(--vp-c-text-2);
+}
+
+.models-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.models-tab {
+  padding: 8px 14px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.models-tab:hover {
+  color: var(--vp-c-text-1);
+}
+
+.models-tab.active {
+  color: var(--vp-c-brand-1);
+  border-bottom-color: var(--vp-c-brand-1);
+}
+
+.models-count {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vp-c-text-3);
 }
 
 .models-grid {

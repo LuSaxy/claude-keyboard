@@ -1,7 +1,7 @@
 {
   "stage": "prototype-not-production-approved",
-  "source": "Ket project clawd_v2, operations 1-335 (socket supports on the battery plate; rev B silkscreen at J1)",
-  "features": 162,
+  "source": "Ket project clawd_v2, operations 1-351 (chamfered MODE/POWER windows; socket supports on the battery plate; rev B silkscreen at J1)",
+  "features": 169,
   "checks": [
     {
       "name": "front_vs_back",
@@ -229,13 +229,15 @@
       "name": "shield_vs_k1",
       "kind": "min_distance",
       "ok": true,
-      "detail": "distance part_K1↔battery_plate = 1.750 mm (min 0.5)"
+      "detail": "distance part_K1↔battery_plate = 0.170 mm (min 0.1)",
+      "note": "socket support stops just under K1"
     },
     {
       "name": "shield_vs_k2",
       "kind": "min_distance",
       "ok": true,
-      "detail": "distance part_K2↔battery_plate = 1.800 mm (min 0.5)"
+      "detail": "distance part_K2↔battery_plate = 0.170 mm (min 0.1)",
+      "note": "socket support stops just under K2"
     },
     {
       "name": "shield_vs_xiao",
@@ -448,6 +450,19 @@
       "note": "paddle centred near the switch knob and the leaf",
       "ok": true,
       "detail": "abs((lev_bot+lev_top)/2-(split+2)) <= 1 holds"
+    },
+    {
+      "name": "ksup_gap_small",
+      "kind": "expr",
+      "note": "support close enough to catch the socket before the PCB flexes much",
+      "ok": true,
+      "detail": "sock_gap <= 0.3 holds"
+    },
+    {
+      "name": "ksup_printable",
+      "kind": "expr",
+      "ok": true,
+      "detail": "ksup_h >= 0.6 holds"
     }
   ],
   "drc": [
@@ -567,16 +582,16 @@
       "sha256": "1b94d5a7219f7bc032fe22d55f30add2871cff4ae7a7941fed4dc96b372b36d9"
     },
     "3mf/clawd-v2-bottom-print.3mf": {
-      "bytes": 74115,
-      "sha256": "293e7d7ade53e808ed257eb970a1356efae948cf9c80667596070cc83cd277c0"
+      "bytes": 78485,
+      "sha256": "bac6ac3215bfc191d3b84bae5302d429ce1869757dd91decbc99ad08b3fa47d5"
     },
     "3mf/clawd-v2-top-print.3mf": {
-      "bytes": 61604,
-      "sha256": "b873fb3c5ea8b9de3b1dc691f87a17f7513b590a0150e6ea93c2de0e9a3285b7"
+      "bytes": 62605,
+      "sha256": "570f47989ab33903f82f70c295fa61107c34a323b496b930c278295fbf43626d"
     },
     "clawd-v2-assembly.step": {
-      "bytes": 34635258,
-      "sha256": "ed61921a8296dcdcdec6e44c9430e7fdb07d3f9a2129747e616c300f59a4d0b0"
+      "bytes": 34782513,
+      "sha256": "7dda99168a0dd53e7682d65c87ae3f74f67b4a2111be04ed41a15dc20728bffa"
     },
     "pcb/clawd-v2-gerber.zip": {
       "bytes": 121322,
@@ -595,12 +610,12 @@
       "sha256": "449ae240006b12fe5e49bef5565c0c5781bf88a8e095ed212b1eb1ec3628b2f7"
     },
     "stl/clawd-v2-bottom-small-lipo.stl": {
-      "bytes": 324684,
-      "sha256": "0601e4a9278e2f00ef101676464b1e8b842c778fdeb3b810ee213462708b09cc"
+      "bytes": 342084,
+      "sha256": "daa5677b55804997ecf5528869bd134d6f13144b80c7c767488990a9a080cd04"
     },
     "stl/clawd-v2-bottom.stl": {
-      "bytes": 324684,
-      "sha256": "856a4dd0b0e23996e405afd3c3da4486742f7726d704046dbca768a94e2208f2"
+      "bytes": 342084,
+      "sha256": "67b88228071d00402e0b7fefec4d9731852485314776a1588239add8e766a86f"
     },
     "stl/clawd-v2-eye-left.stl": {
       "bytes": 684,
@@ -611,8 +626,8 @@
       "sha256": "91bdd44c835b46986fe078578f946ed25113ebd8dc5801c4fa0c8e781dcac45e"
     },
     "stl/clawd-v2-top.stl": {
-      "bytes": 285084,
-      "sha256": "aa738015c74aa1f62c86a49cfa3171e8f89c38ff4318fb56743cfe80eb450de4"
+      "bytes": 289884,
+      "sha256": "a5ecd0fc046d0efa693f6da98f8f877b4b8269e85767154e55b8dbdbd5e0ac0e"
     },
     "stl/clawd-v2-usb-bezel.stl": {
       "bytes": 28084,
@@ -622,5 +637,12 @@
       "bytes": 137601,
       "sha256": "cf2a1fa0b42b78b8a3d83f4665707bd567a74313357aa8d5d3fda50a09a5f23a"
     }
-  }
+  },
+  "configurations": [
+    {
+      "configuration": "kucuk_pil",
+      "ok": true,
+      "summary": "182/182 features built, 72/72 checks pass"
+    }
+  ]
 }

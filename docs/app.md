@@ -12,8 +12,8 @@ gestures on, over Bluetooth, from this page. Nothing to install.
 ::: info Before you connect
 - **Chrome or Edge** on a computer or an Android phone. Firefox, Safari and
   every iPhone/iPad browser lack Web Bluetooth.
-- Pair **clawd** in your computer's Bluetooth settings first. When the status
-  LED turns **magenta**, press **B1** to accept.
+- No need to pair it in your Bluetooth settings first: press **Connect** and
+  pick **clawd**. If the status LED turns **magenta**, press **B1** to accept.
 :::
 
 <ClientOnly>

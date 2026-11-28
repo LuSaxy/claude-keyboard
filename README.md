@@ -53,7 +53,7 @@ The full list with LCSC part numbers, links and a price table is in
 | `docs/` | Self-contained VitePress project (its own `package.json`): landing, setup guide, models page, and the Web Bluetooth control app (`docs/.vitepress/theme/components/ClawdApp.vue`). |
 | `docs/scripts/prepare.mjs` | Build helper: copies the model files into `docs/public/models` and generates the firmware/README doc pages from source. |
 | `models/v2/` | V2: Ket source, STL/3MF print files, STEP, PCB Gerbers/BOM/CPL, renders and the 3D-viewer model. |
-| `models/` (top level) | Legacy V1: FreeCAD sources, printable 3MF files and drawing export. |
+| `models/LICENSE` | Model license (CC BY-NC-SA 4.0). |
 
 ### Develop the site
 
@@ -99,17 +99,6 @@ Start with [`models/v2/README.md`](models/v2/README.md) for printing, opening th
 - [`clawd-v2-gerber.zip`](models/v2/pcb/clawd-v2-gerber.zip) — Gerber/drill package.
 - [`clawd-v2-jlcpcb-prototype.zip`](models/v2/pcb/clawd-v2-jlcpcb-prototype.zip) — Gerbers, BOM and CPL for ordering an assembled board.
 
-### Legacy V1
-
-The original model assets are retained unchanged:
-
-- `models/view.jpeg` - V1 preview image.
-- `models/mascot-top.3mf` and `models/mascot-bottom.3mf` - printable enclosure parts.
-- `models/assembly.FCStd` and `models/mascot.FCStd` - FreeCAD source files.
-- `models/assembly_Page__.svg` - exported drawing page.
-
-More build photos and renders can be dropped into `models/` as the project grows.
-
 ## Firmware
 
 Start with the firmware README:
@@ -124,7 +113,8 @@ setup, and upload troubleshooting.
 Open it on the live site at
 <https://lusaxy.github.io/claude-keyboard/app>, or run the site locally with
 `npm run dev`. It is a small **Web Bluetooth** control panel that runs in the
-browser — no install. After pairing with **clawd**, it can:
+browser — no install, and no need to pair in the system Bluetooth settings
+first. Once connected to **clawd**, it can:
 
 - set the external LED brightness;
 - remap Button 1, Button 2 and the L1 / R1 shoulder buttons;

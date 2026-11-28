@@ -60,7 +60,7 @@ not, solder it by hand. Review the placement preview before paying.
 - Small LiPo (30 × 37 × 4 mm): use the `-small-lipo` bottom shell and plate.
 
 The L1/R1 shoulder buttons are flexible paddles in the shells, not separate
-parts. Print both shells from the same revision; do not mix with V1 parts.
+parts. Print both shells from the same revision.
 
 ## 4. Set up the firmware tools
 
