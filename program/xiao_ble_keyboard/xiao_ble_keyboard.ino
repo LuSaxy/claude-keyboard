@@ -154,7 +154,24 @@ uint8_t const LED_CHR_UUID[16] = {
 };
 BLEService        ledSvc(LED_SVC_UUID);
 BLECharacteristic ledChr(LED_CHR_UUID);
-uint8_t           ledLevel = LED_USER_DEFAULT;
+uint8_t           ledLevel = LED_USER_DEFAULT;   // steady brightness the eyes return to
+
+// Eye effects. Both eyes hang on LED_USER_PIN, so they always do the same thing.
+// An effect runs until the next command, or for `seconds` and then the eyes go
+// back to the steady level (ledLevel).
+#define EYE_STEADY   0                // level
+#define EYE_BLINK    1                // on/off, param = cycle in 0.1 s
+#define EYE_BREATHE  2                // fade in and out, param = cycle in 0.1 s
+#define EYE_FLASH    3                // param = number of quick flashes, then back
+#define EYE_FX_COUNT 4
+struct EyeFx {
+  uint8_t  effect, level, param, seconds;
+  uint32_t start;
+};
+EyeFx eyeFx = { EYE_STEADY, LED_USER_DEFAULT, 0, 0, 0 };
+EyeFx eyeFxNext;                      // written by the BLE callback, taken in loop()
+volatile bool eyeFxPending = false;
+uint8_t eyeOut = 0;                   // PWM value on the pin now
 
 // Custom "config" service: change what each button sends (keyboard or media key)
 // and the advertised device name at runtime, then persist it. Encrypted
@@ -225,7 +242,7 @@ uint32_t lastBat       = 0;
 #define KEYMAP_TYPE_KEYBOARD  0      // mod + code is a keyboard key/combo
 #define KEYMAP_TYPE_CONSUMER  1      // code is a media/consumer usage (BLE only)
 #define KEYMAP_FILE           "/keymap.bin"
-#define KEYMAP_VERSION        4      // 4 = 4 buttons + 5 gestures (36 bytes); 3 = 28; 2 = 16; 1 = 8
+#define KEYMAP_VERSION        5      // 5 = 36 bytes, old defaults migrated; 4 = 36; 3 = 28; 2 = 16; 1 = 8
 #define KEYMAP_KEYS           9
 #define KEYMAP_LEN            (KEYMAP_KEYS * 4)
 #define NAME_FILE             "/name.bin"
@@ -284,17 +301,70 @@ void setRGB(bool r, bool g, bool b) {
 // is 0% duty = pin held LOW = LED off.
 void applyUserLed(uint8_t level) {
   ledLevel = level;
+  eyeFx = { EYE_STEADY, level, 0, 0, millis() };
+  eyeOut = level;
   analogWrite(LED_USER_PIN, level);   // 0 = 0% duty (off) .. 255 = full (active HIGH)
 }
 
-// A bonded host wrote the LED characteristic: byte 0 = brightness (0..255).
-// Runs in Bluefruit's callback task; touching GPIO/PWM here is fine.
+// Queue an eye effect (from BLE or serial); loop() starts it. A steady level
+// without a time limit also becomes the level the eyes return to.
+void requestEyeFx(uint8_t effect, uint8_t level, uint8_t param, uint8_t seconds) {
+  if (effect >= EYE_FX_COUNT) return;
+  eyeFxNext = { effect, level, param, seconds, 0 };
+  eyeFxPending = true;
+}
+
+// Drive the eye PWM from the running effect; called every loop.
+void updateEyes(uint32_t now) {
+  if (eyeFxPending) {
+    eyeFxPending = false;
+    eyeFx = eyeFxNext;
+    eyeFx.start = now;
+    if (eyeFx.effect == EYE_STEADY && eyeFx.seconds == 0) {
+      ledLevel = eyeFx.level;
+      ledChr.write8(ledLevel);                        // keep the readable value in sync
+    }
+  }
+  uint32_t t = now - eyeFx.start;
+  bool done = eyeFx.seconds && t >= (uint32_t)eyeFx.seconds * 1000UL;
+  uint32_t cycle = (uint32_t)(eyeFx.param ? eyeFx.param : 1) * 100UL;
+  uint8_t out = eyeFx.level;
+  switch (eyeFx.effect) {
+    case EYE_BLINK:
+      out = (t % cycle) < cycle / 2 ? eyeFx.level : 0;
+      break;
+    case EYE_BREATHE: {
+      uint32_t ph = t % cycle, half = cycle / 2;
+      uint32_t x = ph < half ? ph * 255 / half : (cycle - ph) * 255 / half;   // 0..255..0
+      out = (uint8_t)((uint32_t)eyeFx.level * x * x / (255UL * 255UL));        // eyes see it linear
+      break;
+    }
+    case EYE_FLASH: {
+      uint8_t count = eyeFx.param ? eyeFx.param : 1;
+      if (t >= (uint32_t)count * 200UL) done = true;
+      else out = (t % 200) < 80 ? eyeFx.level : 0;
+      break;
+    }
+    default: break;
+  }
+  if (done) {
+    eyeFx = { EYE_STEADY, ledLevel, 0, 0, now };
+    out = ledLevel;
+  }
+  if (out != eyeOut) {
+    eyeOut = out;
+    analogWrite(LED_USER_PIN, out);
+  }
+}
+
+// A bonded host wrote the LED characteristic. 1 byte = steady brightness
+// (0..255); 4 bytes = effect [effect, level, param, seconds], see EYE_*.
+// Runs in Bluefruit's callback task: the work is done in loop().
 void led_write_cb(uint16_t conn_hdl, BLECharacteristic* chr, uint8_t* data, uint16_t len) {
   (void) conn_hdl;
   (void) chr;
-  if (len < 1) return;
-  applyUserLed(data[0]);
-  ledChr.write8(ledLevel);                            // keep the readable value in sync
+  if (len >= 4)      requestEyeFx(data[0], data[1], data[2], data[3]);
+  else if (len >= 1) requestEyeFx(EYE_STEADY, data[0], 0, 0);
 }
 
 // Register the custom LED service. Service must begin() before its characteristic,
@@ -303,7 +373,7 @@ void setupLedService() {
   ledSvc.begin();
   ledChr.setProperties(CHR_PROPS_READ | CHR_PROPS_WRITE | CHR_PROPS_WRITE_WO_RESP);
   ledChr.setPermission(SECMODE_ENC_NO_MITM, SECMODE_ENC_NO_MITM);
-  ledChr.setFixedLen(1);
+  ledChr.setMaxLen(4);                                  // read: 1 byte level; write: 1 or 4 bytes
   ledChr.setWriteCallback(led_write_cb);
   ledChr.begin();
   ledChr.write8(ledLevel);
@@ -347,18 +417,49 @@ void saveKeymap() {
   }
 }
 
+static bool isPlainKey(const KeyMap& k, uint16_t code) {
+  return k.type == KEYMAP_TYPE_KEYBOARD && k.mod == 0 && k.code == code;
+}
+
+// Earlier firmware had other defaults: F13/F14, then Enter/Arrow Down on the
+// two keys, and tilt left/right = Arrow Up/Down. The control app saves every
+// entry, so a board saved under that firmware kept those keys as if the user
+// had chosen them. Put today's defaults back where an old default pair is
+// still unchanged; anything else the user set stays.
+static bool migrateOldDefaults(uint8_t version) {
+  bool changed = false;
+  if ((isPlainKey(keys[0], HID_KEY_RETURN) && isPlainKey(keys[1], HID_KEY_ARROW_DOWN)) ||
+      (isPlainKey(keys[0], HID_KEY_F13) && isPlainKey(keys[1], HID_KEY_F14))) {
+    keys[0] = defaultKeys[0];
+    keys[1] = defaultKeys[1];
+    changed = true;
+  }
+  if (version == 3 && isPlainKey(keys[5], HID_KEY_ARROW_UP) && isPlainKey(keys[6], HID_KEY_ARROW_DOWN)) {
+    keys[5] = defaultKeys[5];
+    keys[6] = defaultKeys[6];
+    changed = true;
+  }
+  return changed;
+}
+
 // Load a saved mapping, else keep defaults. Files from older firmware keep
-// their keys; the entries they did not have get their defaults.
+// their keys; the entries they did not have get their defaults, and old
+// default keys are moved to today's (saved again as the current version).
 void loadKeymap() {
   Adafruit_LittleFS_Namespace::File f(InternalFS);
   if (!f.open(KEYMAP_FILE, Adafruit_LittleFS_Namespace::FILE_O_READ)) return;
   uint8_t buf[1 + KEYMAP_LEN];
   int n = f.read(buf, sizeof(buf));
   f.close();
-  if (n == 1 + KEYMAP_LEN && buf[0] == KEYMAP_VERSION) bytesToKeymap(buf + 1, KEYMAP_LEN);
-  else if (n == 29 && buf[0] == 3)                     bytesToKeymap(buf + 1, 28);
-  else if (n == 17 && buf[0] == 2)                     bytesToKeymap(buf + 1, 16);
-  else if (n == 9 && buf[0] == 1)                      bytesToKeymap(buf + 1, 8);
+  uint8_t version = buf[0];
+  if (n == 1 + KEYMAP_LEN && version == KEYMAP_VERSION) { bytesToKeymap(buf + 1, KEYMAP_LEN); return; }
+  if (n == 1 + KEYMAP_LEN && version == 4)              bytesToKeymap(buf + 1, KEYMAP_LEN);
+  else if (n == 29 && version == 3)                     bytesToKeymap(buf + 1, 28);
+  else if (n == 17 && version == 2)                     bytesToKeymap(buf + 1, 16);
+  else if (n == 9 && version == 1)                      bytesToKeymap(buf + 1, 8);
+  else return;
+  if (migrateOldDefaults(version) && Serial) Serial.println("keymap: old default keys replaced");
+  keymapDirty = true;                                   // rewrite as the current version
 }
 
 // [MOTION_FILE_VERSION][flags]. Version 2 = hold-to-tilt, tilt off by
@@ -944,6 +1045,43 @@ void setup() {
   startAdv();
 }
 
+// Text commands on the USB serial port (115200), one per line, for scripts
+// and apps on the computer:
+//   led <0-255>                          steady brightness (also: led on, led off)
+//   led blink   <level> <cycle 0.1s> [seconds]
+//   led breathe <level> <cycle 0.1s> [seconds]
+//   led flash   <count> [level]
+// Answers "ok" or "error: ...".
+void serialCommand(char* cmd) {
+  char what[12] = "";
+  int a = -1, b = -1, c = 0;
+  int n = sscanf(cmd, "led %11s %d %d %d", what, &a, &b, &c);
+  if (n < 1 || strncmp(cmd, "led ", 4) != 0) {
+    Serial.println("error: unknown command; try: led 128, led breathe 255 20, led flash 3");
+    return;
+  }
+  bool bad = false;
+  if (!strcmp(what, "on"))       requestEyeFx(EYE_STEADY, 255, 0, 0);
+  else if (!strcmp(what, "off")) requestEyeFx(EYE_STEADY, 0, 0, 0);
+  else if (!strcmp(what, "blink") || !strcmp(what, "breathe")) {
+    if (n < 3) a = 255;
+    if (n < 3 || b < 1) b = !strcmp(what, "blink") ? 5 : 20;
+    bad = a < 0 || a > 255 || b > 255 || c < 0 || c > 255;
+    if (!bad) requestEyeFx(!strcmp(what, "blink") ? EYE_BLINK : EYE_BREATHE, a, b, c);
+  } else if (!strcmp(what, "flash")) {
+    if (n < 2 || a < 1) a = 3;
+    if (n < 3) b = 255;
+    bad = a > 255 || b < 0 || b > 255;
+    if (!bad) requestEyeFx(EYE_FLASH, b, a, 0);
+  } else {
+    char* end;
+    long v = strtol(what, &end, 10);
+    bad = *end || v < 0 || v > 255;
+    if (!bad) requestEyeFx(EYE_STEADY, (uint8_t)v, 0, 0);
+  }
+  Serial.println(bad ? "error: numbers are 0-255 (cycle in 0.1 s, at least 1)" : "ok");
+}
+
 void loop() {
   uint32_t now = millis();
 
@@ -1013,10 +1151,19 @@ void loop() {
     static uint32_t serialSince = 0;
     if (!serialSince) serialSince = now;
     if (!printedSettings && now - serialSince > 2000) { printedSettings = true; printSettings(); }
+    static char line[48];
+    static uint8_t lineLen = 0;
     while (Serial.available()) {
       int c = Serial.read();
-      if (c == 's') printSettings();
-      else if (c == 'R') resetAllSettings();
+      if (lineLen == 0 && c == 's') { printSettings(); continue; }
+      if (lineLen == 0 && c == 'R') resetAllSettings();
+      if (c == '\r' || c == '\n') {
+        line[lineLen] = 0;
+        if (lineLen) serialCommand(line);
+        lineLen = 0;
+      } else if (lineLen < sizeof(line) - 1) {
+        line[lineLen++] = (char)c;
+      }
     }
   } else {
     printedSettings = false;
@@ -1088,5 +1235,6 @@ void loop() {
   }
 
   updateLed(active);
+  updateEyes(now);
   delay(5);
 }

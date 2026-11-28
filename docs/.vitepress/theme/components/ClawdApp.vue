@@ -3,6 +3,7 @@
 // All Bluetooth access happens in event handlers / onMounted, so it is safe to
 // render under <ClientOnly>. Works in Chrome/Edge over https:// or localhost.
 import { computed, onMounted, reactive, ref } from "vue";
+import { withBase } from "vitepress";
 
 const UUID = {
   ledService: "494dceab-1533-4012-afaa-20d5acfc6ecf",
@@ -563,6 +564,17 @@ async function setLed(level) {
   led.value = value;
 }
 
+// Eye effects (firmware with effects; older firmware takes only 1 byte and
+// ignores these): [effect, level, cycle in 0.1 s / flash count, seconds].
+const EYE_BLINK = 1;
+const EYE_BREATHE = 2;
+const EYE_FLASH = 3;
+async function eyeEffect(effect, param, seconds = 0) {
+  requireConnection();
+  const level = led.value > 0 ? led.value : 255;
+  await writeValue(chars.led, new Uint8Array([effect, level, param, seconds]));
+}
+
 async function saveName() {
   requireConnection();
   const value = name.value.trim();
@@ -713,6 +725,16 @@ async function autoConnectKnown() {
         <button class="btn" @click="run(setLed(64), 'LED updated.')">LOW</button>
         <button class="btn" @click="run(setLed(128), 'LED updated.')">MID</button>
         <button class="btn" @click="run(setLed(255), 'LED updated.')">MAX</button>
+      </div>
+      <p class="hint">
+        Effects, at the brightness above. An app on your computer can send the same
+        effects over USB: see <a :href="withBase('/firmware#eye-leds-from-your-own-apps')">Eye LEDs from your own apps</a>.
+      </p>
+      <div class="grid4">
+        <button class="btn" @click="run(eyeEffect(EYE_BREATHE, 20), 'Eyes breathing.')">BREATHE</button>
+        <button class="btn" @click="run(eyeEffect(EYE_BLINK, 5), 'Eyes blinking.')">BLINK</button>
+        <button class="btn" @click="run(eyeEffect(EYE_FLASH, 3), 'Eyes flashed.')">FLASH ×3</button>
+        <button class="btn" @click="run(setLed(led), 'Eyes steady.')">STEADY</button>
       </div>
     </section>
 

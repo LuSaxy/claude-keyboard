@@ -48,6 +48,7 @@ The full list with LCSC part numbers, links and a price table is in
 | --- | --- |
 | `program/xiao_ble_keyboard/` | Arduino firmware and detailed build/flash notes. |
 | `program/clawd_selftest/` | Solder self-test: finds bridged or open XIAO pins and checks every button. Flash it after soldering the module. |
+| `program/clawd-eyes/` | `clawd_eyes.py`: drive the eye LEDs (steady, blink, breathe, flash) from scripts and apps over USB. |
 | `docs/bom.md` | Parts list with links and prices, and the battery guide (choosing, polarity, charging, level). |
 | `Makefile` | Convenience targets that drive the site (`make`, `make docs-build`, …). |
 | `docs/` | Self-contained VitePress project (its own `package.json`): landing, setup guide, models page, and the Web Bluetooth control app (`docs/.vitepress/theme/components/ClawdApp.vue`). |

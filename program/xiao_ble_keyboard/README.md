@@ -21,6 +21,12 @@ and R1 **Tab**. Each button is a `modifier + keycode` pair you change in
 `xiao_ble_keyboard.ino` or over BLE. Without shoulder buttons wired (V1 build),
 D4/D5 just stay HIGH through the pull-ups and do nothing.
 
+Earlier firmware had other defaults (F13/F14, then Enter and Arrow Down on the
+two keys). The control app saves every entry, so a board saved under that
+firmware kept those keys as if you had chosen them. This firmware moves an
+unchanged old default pair to today's defaults once, at boot; keys you set
+yourself stay. Serial prints `keymap: old default keys replaced` when it does.
+
 > Reference: [Seeed Studio XIAO nRF52840 wiki](https://wiki.seeedstudio.com/XIAO_BLE/)
 
 ## Hardware / Wiring
@@ -153,6 +159,52 @@ service → write the characteristic:
 Resistor value: `R = (3.3 V − Vf) / I`. For red/yellow/green LEDs (Vf ≈ 2.0 V) at
 ~4 mA → ~330 Ω (use 220 Ω brighter / 470 Ω dimmer). For blue/white (Vf ≈ 3.0 V)
 use ~150–220 Ω. Keep each pin under ~8–10 mA total.
+
+A **4-byte** write runs an effect instead: `[effect, level, param, seconds]`.
+
+| Effect | `effect` | `param` | Example (hex) |
+| --- | --- | --- | --- |
+| Steady | `00` | – | `00 80 00 00`: half brightness |
+| Blink | `01` | cycle, 0.1 s units | `01 FF 05 0A`: blink every 0.5 s for 10 s |
+| Breathe | `02` | cycle, 0.1 s units | `02 FF 14 00`: fade in and out every 2 s, until the next command |
+| Flash | `03` | number of flashes | `03 FF 03 00`: three quick flashes |
+
+`seconds` = 0 keeps the effect running until the next write; otherwise the eyes
+go back to the steady brightness afterwards (a flash always does). Reading the
+characteristic returns the steady brightness.
+
+### Eye LEDs from your own apps
+
+The eyes are the one thing on Clawd an app can use to tell you something:
+breathing while a build or an AI agent is working, three flashes when it is
+done, a fast blink when it needs you. Two ways in:
+
+**USB serial (simplest).** With Clawd plugged in, any program can write a line
+to its serial port (115200 baud) and gets `ok` back:
+
+```
+led 128                    steady brightness 0-255 (also: led on, led off)
+led breathe 255 20         level, cycle in 0.1 s [, seconds]
+led blink 255 5 10         blink every 0.5 s for 10 s
+led flash 3                three quick flashes [, level]
+```
+
+[`program/clawd-eyes/clawd_eyes.py`](https://github.com/LuSaxy/claude-keyboard/blob/main/program/clawd-eyes/clawd_eyes.py) wraps this and
+finds the port by itself (`pip install pyserial`):
+
+```sh
+python3 program/clawd-eyes/clawd_eyes.py breathe 255 20   # working
+python3 program/clawd-eyes/clawd_eyes.py flash 3          # done
+python3 program/clawd-eyes/clawd_eyes.py off
+```
+
+For example, in a shell: `make test; python3 clawd_eyes.py flash 3`. Only one
+program can hold the serial port at a time, so close `make monitor` first.
+
+**Bluetooth.** Over BLE, write the 1- or 4-byte values above to the LED
+characteristic, from any BLE library (Web Bluetooth, Python `bleak`, Swift
+CoreBluetooth). The link must be bonded and encrypted, like the control app;
+the computer can keep using Clawd as a keyboard at the same time (two links).
 
 Tuning in `xiao_ble_keyboard.ino`: `LED_USER_PIN` (default `D3`) and
 `LED_USER_DEFAULT` (boot brightness, default `0`). Brightness is always driven via
