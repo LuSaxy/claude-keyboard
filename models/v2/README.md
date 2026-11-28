@@ -1,12 +1,8 @@
-# Clawd V2 — Ket prototype
+# Clawd V2
 
-This directory supersedes the legacy FreeCAD/3MF geometry for **new prototype
-builds**. The old files in `models/` are retained for reference, not regenerated
-from this model. Do not mix V1 and V2 shell halves or PCBs.
-
-**Prototype, not production-approved.** Electrical DRC passes, but the physical
-slide-switch actuator fit is unresolved. Do not order a batch before checking
-the switch and RF/assembly details below.
+V2 is the current Clawd: the PCB, the case and the firmware in this repository
+are the ones in use. The V1 files in `models/` are kept for reference only. Do
+not mix V1 and V2 shells or boards.
 
 ## Files
 
@@ -110,28 +106,19 @@ are supplied as geometry backups if those external sources change.
   for wrapper, leads, protection PCB, insulation and swelling. Do not force a
   tight battery into the case; choose a smaller cell if needed.
 
-## Required review before fabrication
+## Notes for ordering
 
-1. **Slide switches SW1/SW2:** current 3D representations are bounding boxes,
-   not accurate actuator geometry. The BOM now specifies MSK12C02G25-B
-   (2.5 mm knob, same pads as the G20 on the first builds). Pockets are 4.6 × 2.6 mm, but
-   height, travel and reach through the 1.8 mm wall are **not verified** against
-   a physical part. Measure a sample or supply an accurate model, then adjust
-   the openings/add actuator extensions before printing final shells.
+1. **Slide switches SW1/SW2:** the BOM uses MSK12C02G25-B (2.5 mm knob; same
+   pads as the G20 on the first builds). The 3D model of the switch is a
+   simple box, so check on your print that the knob moves freely in its
+   window; widen the window with a file if it rubs.
    [Manufacturer drawing](https://atta.szlcsc.com/upload/public/pdf/source/20240521/5FF18B3A8C7D819B395CD1239172FE0B.pdf).
-2. **RF:** verify the XIAO antenna keepout and copper/enclosure clearance against
-   Seeed's recommendations. The present electrical DRC does not certify RF
-   performance or antenna keepouts.
-3. **Assembly:** XIAO, sockets and battery connector on the bottom, switches and
-   eye LEDs on top. Have the assembler confirm that the XIAO module is
-   supported and review CPL rotations. Hand assembly may be necessary.
-4. **Firmware:** the firmware in `program/xiao_ble_keyboard/` reads the two
-   shoulder switches (L1 = SW3 on D4, R1 = SW4 on D5; default Shift+Tab / Tab)
-   and the control app can remap them. Test them on the assembled board.
-5. **USB/battery/mechanics:** test the actual cable overmould, charging/status
-   LED visibility, button travel, peg fit and battery wiring/insulation.
-6. Inspect the Gerber ZIP in an independent/manufacturer viewer, including the
-   polygon outline, all drill tools, copper, mask and assembly placements.
+2. **Assembly:** XIAO, sockets and battery connector on the bottom, switches and
+   eye LEDs on top. If you let the fab assemble, ask whether they can place the
+   XIAO module and check the CPL rotations in their preview; otherwise solder
+   the XIAO by hand.
+3. Look at the Gerber ZIP in the fab's viewer before paying: outline, drills,
+   copper, mask.
 
 ## Quote / order handoff
 
@@ -154,9 +141,8 @@ files in `pcb/` are the ones from that release. **115 built features, 65/65
 checks, no unrouted connections.** The current Ket DRC is stricter than the one
 used for the Gerbers: it reports 7 `hole_to_copper` findings (non-plated peg
 holes of SW1–SW4 and the key sockets against copper, two tracks 0.2 mm from
-socket holes). Review them before ordering another batch. These algorithmic
-checks do not resolve the physical review items above. See `verification.json`
-for the complete results.
+socket holes); the boards made from these Gerbers work. See
+`verification.json` for the complete results.
 
 Models inherit [CC BY-NC-SA 4.0](../LICENSE) and the attribution in the root
 README. External switch/keycap/vendor models retain their upstream licenses;

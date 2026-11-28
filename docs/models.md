@@ -9,10 +9,10 @@ renders. Which file to print for which part is in the
 [build guide](/setup#_3-print-the-case).
 
 ::: info Which PCB files
-Order **rev A** (`clawd-v2-gerber.zip`): that is the board that was built and
-tested. **Rev B** only adds `+ − BAT` marks next to the battery socket; it has
-not been ordered yet, so check it in a Gerber viewer first. The open review
-points are on [V2 hardware](/v2#required-review-before-fabrication).
+Order **rev A** (`clawd-v2-gerber.zip`): that is the board in use. **Rev B**
+only adds `+ − BAT` marks next to the battery socket; it has not been ordered
+yet, so look at it in a Gerber viewer first. Ordering notes are on
+[V2 hardware](/v2#notes-for-ordering).
 :::
 
 ## What V2 looks like

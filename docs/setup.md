@@ -9,13 +9,6 @@ From parts to a working Clawd V2: order the board, print the case, solder,
 test, flash, close it up and pair. Plan a few evenings: the PCB takes a week or
 two to arrive, the print takes a few hours, the soldering about an hour.
 
-::: info Status
-V2 is a prototype. The rev A boards have been built and type over USB and
-Bluetooth. Not yet verified: the slide-switch knobs reaching through the case,
-and the antenna keepout. Fine for building your own; the open points are on
-[V2 hardware](/v2#required-review-before-fabrication).
-:::
-
 ## 1. Get the files
 
 Everything (print files, Gerbers, firmware, self-test) is in the repository:

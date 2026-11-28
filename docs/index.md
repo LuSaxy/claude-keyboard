@@ -41,8 +41,8 @@ hero:
     <dd>Escape · Enter on the keys, Shift+Tab · Tab on the shoulders. Lift to wake, double tap and tilt on the Sense.</dd>
   </div>
   <div>
-    <dt>Status</dt>
-    <dd>V2 prototype: rev A boards built and typing. Slide-switch fit and antenna keepout still unverified.</dd>
+    <dt>Power</dt>
+    <dd>1S LiPo up to 40 × 35 × 5 mm, charged over USB-C. Deep sleep between presses.</dd>
   </div>
 </dl>
 <p class="note">Prices depend on where you buy and how many boards you order; the <a href="./bom">parts list</a> has every part with an LCSC number and link.</p>

@@ -153,12 +153,19 @@ onMounted(async () => {
       const o = OFFSETS[k] ?? [0, 0, 0];
       parts.push({ obj: child, base: child.position.clone(), off: new THREE.Vector3(o[0], o[2], -o[1]) });
     }
-    // Compact (home hero): close up when assembled, pull back as it comes apart.
+    // Compact (home hero): straight from above when assembled (front of the
+    // keyboard at the bottom), tilting to a side view and pulling back as it
+    // comes apart, so the stacked parts separate on screen.
     const frame = (t: number) => {
       const y = props.compact ? 6 + 32 * t : 22;
-      const dist = props.compact ? 155 + 150 * t : 230;
-      const dir = camera.position.clone().sub(controls.target);
+      const dist = props.compact ? 150 + 155 * t : 230;
+      let dir = camera.position.clone().sub(controls.target);
       if (dir.lengthSq() < 1e-6) dir.set(0.55, 0.45, 0.7);
+      if (props.compact) {
+        const polar = 0.001 + 1.05 * t;
+        const azimuth = Math.atan2(dir.x, dir.z);
+        dir = new THREE.Vector3().setFromSphericalCoords(1, polar, azimuth);
+      }
       controls.target.set(center.x, baseY + y, center.z);
       camera.position.copy(controls.target).add(dir.normalize().multiplyScalar(dist));
     };
@@ -171,7 +178,7 @@ onMounted(async () => {
     const box = new THREE.Box3().setFromObject(root);
     const center = box.getCenter(new THREE.Vector3());
     const baseY = center.y;
-    camera.position.set(0.55, 0.45, 0.7);
+    camera.position.set(props.compact ? 0 : 0.55, props.compact ? 1 : 0.45, props.compact ? 0.001 : 0.7);
     setExplode(explode.value);
     setEdges(edges.value);
 
@@ -247,6 +254,7 @@ onBeforeUnmount(() => {
       </button>
       <input
         v-model.number="explode"
+        :style="{ '--p': explode }"
         class="slider"
         type="range"
         min="0"
@@ -325,10 +333,63 @@ onBeforeUnmount(() => {
 }
 .btn.primary { background: var(--vp-c-brand-3); border-color: var(--vp-c-brand-3); color: var(--vp-c-white); }
 .btn.primary:hover { background: var(--vp-c-brand-2); }
-.compact .bar { left: 20%; right: 20%; }
+.compact .bar { left: 20%; right: 20%; transition: opacity 0.2s ease; }
+/* Home hero: the slider shows while the pointer is on the model (always on
+   touch screens, which cannot hover). */
+@media (hover: hover) {
+  .compact .bar { opacity: 0; }
+  .compact:hover .bar,
+  .compact .bar:focus-within { opacity: 1; }
+}
 @media (max-width: 959px) {
   .clawd3d.compact { height: 360px; }
 }
-.slider { flex: 1; min-width: 60px; accent-color: var(--vp-c-brand-1); }
+/* Thin track, a slim upright handle instead of the round knob. */
+.slider {
+  flex: 1;
+  min-width: 60px;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.slider::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(var(--vp-c-brand-1), var(--vp-c-brand-1)) 0 / calc(var(--p, 0) * 100%) 100% no-repeat,
+    var(--vp-c-divider);
+}
+.slider::-moz-range-track {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--vp-c-divider);
+}
+.slider::-moz-range-progress {
+  height: 2px;
+  background: var(--vp-c-brand-1);
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 4px;
+  height: 16px;
+  margin-top: -7px;
+  border-radius: 2px;
+  border: 0;
+  background: var(--vp-c-brand-1);
+}
+.slider::-moz-range-thumb {
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  border: 0;
+  background: var(--vp-c-brand-1);
+}
+.slider:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .chk { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 </style>

@@ -2,10 +2,8 @@
 
 ![Clawd V2 render](models/v2/images/v2-back.webp)
 
-> **Status: V2 prototype.** The rev A boards have been built and type over USB
-> and Bluetooth. Still unverified: the slide-switch fit through the case and the
-> antenna keepout. Fine for building your own; review
-> [`models/v2/`](models/v2/README.md) before ordering a batch.
+> **V2 is the current Clawd**: PCB, case and firmware are in use. The files and
+> ordering notes are in [`models/v2/`](models/v2/README.md).
 
 **Live site:** <https://lusaxy.github.io/claude-keyboard/>: the build guide,
 parts list, model downloads, firmware reference and the browser control app.
@@ -91,15 +89,15 @@ LFS enabled so the model binaries and preview image are real files).
 
 ## Models
 
-### V2 prototype (current CAD/PCB revision)
+### V2 (current)
 
 Start with [`models/v2/README.md`](models/v2/README.md) for printing, opening the
-`.ket` file in a new Ket project, manufacturing handoff and unresolved issues.
+`.ket` file in a new Ket project and ordering the PCB.
 
 - [`clawd-v2.ket`](models/v2/clawd-v2.ket) — editable source, PCB and routing.
 - [`clawd-v2-assembly.step`](models/v2/clawd-v2-assembly.step) — CAD geometry backup.
 - [`clawd-v2-gerber.zip`](models/v2/pcb/clawd-v2-gerber.zip) — Gerber/drill package.
-- [`clawd-v2-jlcpcb-prototype.zip`](models/v2/pcb/clawd-v2-jlcpcb-prototype.zip) — assembly/quote handoff plus preflight notes.
+- [`clawd-v2-jlcpcb-prototype.zip`](models/v2/pcb/clawd-v2-jlcpcb-prototype.zip) — Gerbers, BOM and CPL for ordering an assembled board.
 
 ### Legacy V1
 

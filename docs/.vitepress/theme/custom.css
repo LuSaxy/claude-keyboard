@@ -67,6 +67,11 @@
   --vp-c-divider: #36302a;
   --vp-c-border: #433c33;
   --vp-c-gutter: #100e0c;
+
+  /* The cream info callout from :root would glare in dark mode. */
+  --vp-custom-block-info-bg: #2a241d;
+  --vp-custom-block-info-border: #3d352b;
+  --vp-custom-block-info-code-bg: #352e25;
 }
 
 /* Slightly softer, warmer hero name on small screens */
@@ -79,12 +84,57 @@
   list-style-type: square;
 }
 
+/* Doc pages: less padding around the content and a wider column, so tables
+   and code have room; text keeps a readable line length below. */
+@media (min-width: 960px) {
+  .VPDoc {
+    padding: 28px 24px 0 !important;
+  }
+  .VPDoc .content {
+    padding: 0 16px 96px !important;
+  }
+}
+@media (min-width: 1280px) {
+  .VPDoc .aside {
+    padding-left: 16px;
+    max-width: 220px;
+  }
+  .VPDoc .aside-container {
+    padding-top: calc(var(--vp-nav-height) + 28px);
+    width: 204px;
+  }
+}
+/* VitePress' own rules are scoped (more specific), hence !important. */
+.VPDoc.has-aside .content-container {
+  max-width: 900px !important;
+}
+.VPDoc:not(.has-aside) .content-container {
+  max-width: 980px !important;
+}
+@media (min-width: 960px) {
+  .VPDoc:not(.has-sidebar) .container {
+    max-width: 1180px !important;
+  }
+  .VPDoc:not(.has-sidebar) .content {
+    max-width: 980px !important;
+  }
+}
+.vp-doc p,
+.vp-doc ul,
+.vp-doc ol {
+  max-width: 78ch;
+}
+.vp-doc h2 {
+  margin-top: 40px;
+  padding-top: 20px;
+}
+
 /* Make the control-app page roomier than the default prose column. */
 .clawd-app-page .VPDoc .container {
-  max-width: 1040px;
+  max-width: 1180px !important;
 }
 .clawd-app-page .VPDoc:not(.has-aside) .content {
-  max-width: 760px;
+  max-width: 900px !important;
 }
 
 /* Two-column render gallery on the Models page. */

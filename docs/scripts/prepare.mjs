@@ -121,7 +121,7 @@ async function generateReadmePage() {
     // only make sense on GitHub.
     .replace(/^\*\*Live site:\*\*[\s\S]*?\n\n/m, "")
     .replace("[`docs/bom.md`](/bom) (on the site: **Parts list (BOM)**)", "the [parts list](/bom)")
-    .replace("review\n> [`models/v2/`](/v2) before", "review\n> [V2 hardware](/v2) before");
+    .replace("are in [`models/v2/`](/v2).", "are on [V2 hardware](/v2).");
   md = md.replace(
     /^## Highlights/m,
     "::: tip Where to go\n**Build one:** the [build guide](/setup), step by step. **Already have one:** the [control app](/app).\n:::\n\n## Highlights",
