@@ -584,7 +584,7 @@
     },
     "pcb/clawd-v2-jlcpcb-prototype.zip": {
       "bytes": 125151,
-      "sha256": "8e490fd81143438626c33855301703353b09a2c7d2d20d742dd682cfea00e1b4"
+      "sha256": "88d8237e3c6cf96d1fd81b9213e1b0d5ab81acc6796ce09c14300796a4c13db1"
     },
     "stl/clawd-v2-battery-plate-small-lipo.stl": {
       "bytes": 7084,
@@ -620,7 +620,7 @@
     },
     "pcb/rev-b/clawd-v2-gerber-rev-b.zip": {
       "bytes": 137601,
-      "sha256": "ba9100413a14634d6207a10cf5cbac188472d06a19b002dfd3ebfc157b06539d"
+      "sha256": "cf2a1fa0b42b78b8a3d83f4665707bd567a74313357aa8d5d3fda50a09a5f23a"
     }
   }
 }

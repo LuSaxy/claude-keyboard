@@ -19,7 +19,7 @@ works.
 | --- | --- | --- | --- | --- | --- | --- | ---: | ---: |
 | U1 | 1 | Seeed Studio XIAO nRF52840 **Sense** (or plain). **Not** the *Plus* / *Sense Plus*, see [Module](#module-xiao-nrf52840-sense-not-plus) | 102010469 (Sense) / 102010448 | XIAO castellated | C37327670 | [Seeed](https://www.seeedstudio.com/Seeed-XIAO-BLE-Sense-nRF52840-p-5253.html) | — | — |
 | K1, K2 | 2 | Kailh hot-swap socket, MX | CPG151101S11 | TH, 10.9 × 5.9 mm | C2803348 | [LCSC](https://www.lcsc.com/product-detail/C2803348.html) | — | — |
-| SW1, SW2 | 2 | Slide switch SPDT, **2.5 mm** knob (MODE, POWER). Same pads as the G20 (2.0 mm) in `bom.csv`; the longer knob is easier to reach with a fingernail | MSK12C02G25-B | SMD MSK12C02 | C22435663 | [LCSC](https://www.lcsc.com/product-detail/C22435663.html) | — | — |
+| SW1, SW2 | 2 | Slide switch SPDT, **2.5 mm** knob (MODE, POWER). Same pads as the G20 (2.0 mm) used on the first builds; the longer knob is easier to reach with a fingernail | MSK12C02G25-B | SMD MSK12C02 | C22435663 | [LCSC](https://www.lcsc.com/product-detail/C22435663.html) | — | — |
 | SW3, SW4 | 2 | Side-push tactile switch, 2.2 N (L1, R1) | Panasonic EVQP7C01K | SMD EVQP7C | C528965 | [LCSC](https://www.lcsc.com/product-detail/C528965.html) | — | — |
 | D1, D2 | 2 | LED yellow, 0805 (eyes) | SZYY0805Y | 0805 | C434436 | [LCSC](https://www.lcsc.com/product-detail/C434436.html) | — | — |
 | R1, R2 | 2 | Resistor 330 Ω, 0603 (one per LED) | 0603WAF3300T5E | 0603 | C23138 | [LCSC](https://www.lcsc.com/product-detail/C23138.html) | — | — |
